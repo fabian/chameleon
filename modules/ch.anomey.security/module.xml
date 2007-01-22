@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module xmlns="http://anomey.ch/core/module" id="ch.anomey.security">
+	<class>AnomeySecurityModule</class>
+	<extensionPoint>
+		<namespace>http://anomey.ch/security/provider</namespace>
+		<description>security providers</description>
+		<class>AnomeySecurityProviderExtension</class>
+	</extensionPoint>
+</module>

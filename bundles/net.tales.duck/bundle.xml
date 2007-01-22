@@ -1,0 +1,6 @@
+<?xml version="1.0" ?>
+<bundle id="net.tales.duck">
+	<name>tales about ducks</name>
+	<description>I'll tell you stories about ducks.</description>
+	<module>net.tales.duckling.ugly</module>
+</bundle>

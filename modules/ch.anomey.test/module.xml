@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module xmlns="http://anomey.ch/core/module" id="ch.anomey.test">
+	<require>
+		<module>ch.anomey.security</module>
+	</require>
+	<class>AnomeyTestModule</class>
+</module>

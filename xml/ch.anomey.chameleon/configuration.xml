@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+<configuration>
+	<disable>
+		<bundle>net.tales.duck</bundle>
+	</disable>
+	<logLevel>1</logLevel>
+</configuration>
