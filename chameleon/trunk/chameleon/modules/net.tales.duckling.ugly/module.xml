@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module xmlns="http://anomey.ch/core/module" id="net.tales.duckling.ugly">
+	<require>
+		<module>ch.anomey.processor</module>
+	</require>
+	<extension xmlns="http://anomey.ch/core/processor">UglyDuckingProcessor</extension>
+</module>

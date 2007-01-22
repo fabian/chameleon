@@ -1,0 +1,8 @@
+<?xml version="1.0" ?>
+<bundle id="ch.anomey.framework">
+	<name>anomey framework</name>
+	<description></description>
+	<module>ch.anomey.chameleon</module>
+	<module>ch.anomey.processor</module>
+	<module>ch.anomey.util</module>
+</bundle>
