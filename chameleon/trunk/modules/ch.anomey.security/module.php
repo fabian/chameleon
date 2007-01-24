@@ -138,13 +138,12 @@ interface AnomeySecurityProvider {
 	public function getGroups();
 
 	/**
-	 * Checks if the username and the password matches.
+	 * Tries to authenticate the user with the passed parameters.
 	 *
-	 * @param string $username
-	 * @param string $password
+	 * @param array $parameters array with authentication parameters
 	 * @return mixed <code>false</code> on failure, otherwise the User object
 	 */
-	public function checkPassword($username, $password);
+	public function authenticate($parameters);
 }
 
 class AnomeySecurityModule extends Module implements AnomeySecurityProvider {
@@ -219,10 +218,11 @@ class AnomeySecurityModule extends Module implements AnomeySecurityProvider {
 		return null;
 	}
 
-	public function checkPassword($username, $password) {
+	public function authenticate($parameters) {
 		foreach($this->providers as $provider) {
-			if($provider->checkPassword($username, $password) != false) {
-				return $provider->checkPassword($username, $password);
+			$user = $provider->authenticate($parameters);
+			if($user !== false) {
+				return $user;
 			}
 		}
 		return false;
