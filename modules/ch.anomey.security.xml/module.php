@@ -60,13 +60,13 @@ class AnomeyXMLSecurityProvider implements AnomeySecurityProvider  {
 	}
 
 	/**
-	 * Checks if the username and the password matches.
+	 * Tries to authenticate the user with the parameters
+	 * $parameters[username] and $parameters[password].
 	 *
-	 * @param string $username
-	 * @param string $password
+	 * @param array $parameters array with login parameters
 	 * @return mixed <code>false</code> on failure, otherwise the User object
 	 */
-	public function checkPassword($username, $password) {
+	public function authenticate($parameters) {
 		return false;
 	}
 }
