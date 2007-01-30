@@ -10,6 +10,10 @@ class AnomeyTestModule extends Module {
 		foreach($this->getModule('ch.anomey.security')->getUser('u1')->getGroups() as $group) {
 			echo $group->getName() . ', ';
 		}
+		echo '<br/>Rersources: ';
+		foreach($this->getModule('ch.anomey.security')->getResources() as $resource) {
+			echo $resource->getName() . ', ';
+		}
 	}
 }
 

@@ -30,6 +30,9 @@ class Vector extends ArrayObject {
 		return new Vector(array_keys($this));
 	}
 
+	/**
+	 * @return Vector
+	 */
 	public function getValues() {
 		return new Vector(array_values((array) $this));
 	}

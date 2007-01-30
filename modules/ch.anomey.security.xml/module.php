@@ -16,6 +16,11 @@ class AnomeyXMLSecurityProvider implements AnomeySecurityProvider  {
 	 */
 	private $groups;
 
+	/**
+	 * @var Vector
+	 */
+	private $resources;
+
 	public function __construct() {
 		$this->users = new Vector();
 		try {
@@ -49,6 +54,17 @@ class AnomeyXMLSecurityProvider implements AnomeySecurityProvider  {
 			}
 		} catch(FileNotFoundException $e) {
 		}
+
+		$this->resources = new Vector();
+		try {
+			$resourcesXml = XML::load('xml/ch.anomey.security.xml/resources.xml');
+			foreach($resourcesXml->resource as $resourceXml) {
+				$resource = new Resource();
+				$resource->setName((string) $resourceXml['name']);
+				$this->resources->append($resource);
+			}			
+		} catch(FileNotFoundException $e) {
+		}
 	}
 
 	public function getUsers() {
@@ -57,6 +73,10 @@ class AnomeyXMLSecurityProvider implements AnomeySecurityProvider  {
 
 	public function getGroups() {
 		return $this->groups->getValues();
+	}
+	
+	public function getResources() {
+		return $this->resources->getValues();
 	}
 
 	/**
