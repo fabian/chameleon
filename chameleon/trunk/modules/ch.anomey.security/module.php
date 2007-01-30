@@ -118,6 +118,19 @@ class Group {
 	}
 }
 
+class Resource {
+	
+	private $name;
+	
+	public function getName() {
+		return $this->name;
+	}
+	
+	public function setName($name) {
+		$this->name = $name;
+	}
+}
+
 /**
  * Interface for security providers.
  */
@@ -136,6 +149,8 @@ interface AnomeySecurityProvider {
 	 * @return Vector
 	 */
 	public function getGroups();
+	
+	public function getResources();
 
 	/**
 	 * Tries to authenticate the user with the passed parameters.
@@ -216,6 +231,14 @@ class AnomeySecurityModule extends Module implements AnomeySecurityProvider {
 			}
 		}
 		return null;
+	}
+
+	public function getResources() {
+		$resources = new Vector();
+		foreach($this->providers as $provider) {
+			$resources->merge($provider->getResources());
+		}
+		return $resources;
 	}
 
 	public function authenticate($parameters) {

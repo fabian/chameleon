@@ -7,6 +7,12 @@ class Request extends Bean {
 	public function getMethod() {
 		return $this->method;
 	}
+	
+	private $url;
+	
+	public function getURL() {
+		return $this->url;
+	}
 
 	private $trail;
 
@@ -44,6 +50,10 @@ class Request extends Bean {
 		$this->parameters->merge($parameters);
 	}
 
+	public function addParameter($key, $value) {
+		$this->parameters->set($key, $value);
+	}
+
 	private $messages;
 
 	public function getMessages() {
@@ -67,8 +77,9 @@ class Request extends Bean {
 		$this->messages->merge($messages);
 	}
 
-	public function __construct($method, $trail, Session $session, Cookie $cookie) {
+	public function __construct($method, URL $url, $trail, Session $session, Cookie $cookie) {
 		$this->method = $method;
+		$this->url = $url;
 		$this->trail = $trail;
 		$this->session = $session;
 		$this->cookie = $cookie;
@@ -78,6 +89,9 @@ class Request extends Bean {
 }
 
 class AnomeyProcessorModule extends Module {
+	
+	private $url;
+	
 	public function invoke() {
 		$this->parse();
 	}
@@ -105,7 +119,8 @@ class AnomeyProcessorModule extends Module {
 		// anomey doesn't run in the root folder
 		$path .= $path != '/' ? '/' : '';
 
-		$url = new URL($scheme, $host, $path);
+		$this->url = new URL($scheme, $host, $path);
+		$this->url->setBase('index.php/');
 
 		// -----------------------------
 		// Instantiate the request.
@@ -140,9 +155,9 @@ class AnomeyProcessorModule extends Module {
 		$session->clear('systemMessages');
 
 		// Initialize cookie.
-		$cookie = new Cookie($url);
+		$cookie = new Cookie($this->url);
 
-		$request = new Request($method, $trail, $session, $cookie);
+		$request = new Request($method, $this->url, $trail, $session, $cookie);
 		$request->addParameters($parameters);
 		$request->addMessages($messages);
 		
@@ -151,6 +166,10 @@ class AnomeyProcessorModule extends Module {
 			$processor = new $class($request);
 			$processor->process();
 		}
+	}
+	
+	public function getURL() {
+		return $this->url;
 	}
 }
 
@@ -172,13 +191,18 @@ interface AnomeyProcessor {
 }
 
 class AnomeyModuleProcessor implements AnomeyProcessor {
+	
 	private $trail;
+	
+	private $runpath;
 	
 	public function __construct(Request $request) {
 		$this->trail = $request->getTrail();
+		$this->runpath = $request->getURL()->getRunpath();
 	}
 	
 	public function process() {
+		echo '<a href="' . $this->runpath . '/foo/bar">Goto foobar</a><br/>';
 		echo $this->trail;
 	}
 }

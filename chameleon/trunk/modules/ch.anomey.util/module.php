@@ -121,16 +121,16 @@ class Cookie {
 }
 
 class URL extends Bean {
+	
+	const CHARS = '[-_\/a-zA-Z0-9]';
 
 	private $scheme;
 
 	private $host;
 
 	private $path;
-
-	public function getPath() {
-		return $this->path;
-	}
+	
+	private $base = '';
 
 	function __construct($scheme, $host, $path) {
 		$this->scheme = $scheme;
@@ -138,12 +138,28 @@ class URL extends Bean {
 		$this->path = $path;
 	}
 
+	public function getPath() {
+		return $this->path;
+	}
+	
+	public function getBase() {
+		return $this->base;
+	}
+	
+	public function setBase($base) {
+		$this->base = $base;
+	}
+
 	public function getServer() {
-		$this->scheme . '://' . $this->host;
+		return $this->scheme . '://' . $this->host;
 	}
 
 	public function toString() {
 		return $this->getServer() . $this->path;
+	}
+	
+	public function getRunpath() {
+		return substr($this->path . $this->getBase(), 0, -1);
 	}
 }
 
