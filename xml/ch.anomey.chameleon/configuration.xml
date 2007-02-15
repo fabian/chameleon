@@ -3,5 +3,7 @@
 	<disable>
 		<bundle>net.tales.duck</bundle>
 	</disable>
-	<logLevel>1</logLevel>
+	<log>
+		<level>1</level>
+	</log>
 </configuration>

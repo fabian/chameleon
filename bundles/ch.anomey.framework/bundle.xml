@@ -2,6 +2,7 @@
 <bundle id="ch.anomey.framework">
 	<name>anomey framework</name>
 	<description></description>
+	<update>http://anomey.ch/framework/update</update>
 	<module>ch.anomey.chameleon</module>
 	<module>ch.anomey.processor</module>
 	<module>ch.anomey.util</module>

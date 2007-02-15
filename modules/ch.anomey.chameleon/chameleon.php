@@ -56,6 +56,63 @@ class ExtensionRegistry {
 	}
 }
 
+class Bundle {
+
+	/**
+	 * @var Chameleon
+	 */
+	private $chameleon;
+	
+	private $id;
+
+	private $name;
+
+	private $description = '';
+
+	private $update;
+
+	/**
+	 * @var Vector
+	 */
+	private $modules;
+
+	public function __construct(Chameleon $chameleon, $id, $name, $update = '') {
+		$this->chameleon = $chameleon;
+		$this->id = $id;
+		$this->name = $name;
+		$this->update = '';
+		$this->modules = new Vector();
+	}
+	
+	public function getId() {
+		return $this->id;
+	}
+
+	public function getName() {
+		return $this->name;
+	}
+
+	public function getDescription() {
+		return $this->description;
+	}
+
+	public function setDescription($description) {
+		$this->description = $description;
+	}
+
+	public function getUpdate() {
+		return $this->update;
+	}
+
+	public function getModules() {
+		return $this->modules;
+	}
+
+	public function addModule(Module $module) {
+		$this->modules->append($module);
+	}
+}
+
 /**
  * The module class which can be overloaded by the modules.
  * It makes the extension point registry avaible to the modules
@@ -64,31 +121,31 @@ class ExtensionRegistry {
  * @author Fabian Vogler
  */
 class Module {
-	
+
 	/**
 	 * Reference to chameleon.
 	 * 
 	 * @var Chameleon
 	 */
 	private $chameleon;
-	
-	private $name;
 
-	public function __construct(Chameleon $chameleon, $name) {
+	private $id;
+
+	public function __construct(Chameleon $chameleon, $id) {
 		$this->chameleon = $chameleon;
-		$this->name = $name;
+		$this->id = $id;
 	}
-	
-	public function getName() {
-		return $this->name;
+
+	public function getId() {
+		return $this->id;
 	}
-	
+
 	public function getLogLevel() {
 		return $this->chameleon->getLogLevel();
 	}
-	
-	public function getModule($name) {
-		return $this->chameleon->getModule($name);
+
+	public function getModule($id) {
+		return $this->chameleon->getModule($id);
 	}
 
 	/**
@@ -243,6 +300,9 @@ class XMLExtensionPointElement implements ExtensionPointElement {
 	}
 }
 
+class BundleNotFoundException extends Exception {
+}
+
 class ModuleNotFoundException extends Exception {
 }
 
@@ -258,20 +318,29 @@ class Chameleon {
 	const MODULE_XML = 'module.xml';
 	const MODULE_PHP = 'module.php';
 
-	private $path;
-	
+	const BUNDLE_XML = 'bundle.xml';
+
+	private $modulesPath;
+
+	private $bundlesPath;
+
 	/**
 	 * @var ExtensionRegistry
 	 */
 	private $extensionRegistry;
-	
+
+	/**
+	 * @var Vector
+	 */
+	private $disabledBundles;
+
 	/**
 	 * @var Vector
 	 */
 	private $disabledModules;
-	
+
 	private $logLevel;
-	
+
 	/**
 	 * @var Log
 	 */
@@ -284,28 +353,44 @@ class Chameleon {
 	 */
 	private $modules;
 
-	public function __construct($path) {
-		$this->path = $path;
+	/**
+	 * Cache with all loaded bundles.
+	 * 
+	 * @var Vector
+	 */
+	private $bundles;
+
+	public function __construct($modulesPath = 'modules', $bundlesPath = 'bundles') {
+		$this->modulesPath = $modulesPath;
+		$this->bundlesPath = $bundlesPath;
 		$this->extensionRegistry = new ExtensionRegistry();
+		$this->disabledBundles = new Vector();
 		$this->disabledModules = new Vector();
 		$this->modules = new Vector();
+		$this->bundles = new Vector();
 
 		// parse disabled modules
 		$xml = simplexml_load_file('xml/ch.anomey.chameleon/configuration.xml');
-
 		foreach ($xml->disable->bundle as $bundle) {
-			if($bundleXml = @simplexml_load_file('bundles/' . $bundle . '/bundle.xml')) {
-				foreach ($bundleXml->module as $module) {
-					$this->disabledModules[] = (string) $module;
+			$this->disabledBundles->append((string) $bundle);
+		}
+
+		$this->logLevel = (int) $xml->log->level;
+		$this->log = new Log('ch.anomey.chameleon', $this->getLogLevel());
+
+		// load bundles
+		foreach (scandir($this->bundlesPath) as $bundle) {
+			if ($this->isBundle($bundle)) {
+				try {
+					$this->loadBundle($bundle);
+				} catch (ModuleMissingException $e) {
+					$this->log->warn($e->getMessage());
 				}
 			}
 		}
-		
-		$this->logLevel = (int) $xml->logLevel;
-		$this->log = new Log('ch.anomey.chameleon', $this->getLogLevel());
 
 		// load modules in path
-		foreach (scandir($this->path) as $module) {
+		foreach (scandir($this->modulesPath) as $module) {
 			if ($this->isModule($module)) {
 				try {
 					$this->loadModule($module);
@@ -315,15 +400,15 @@ class Chameleon {
 			}
 		}
 	}
-	
+
 	public function getExtensionRegistry() {
 		return $this->extensionRegistry;
 	}
-	
+
 	public function getLogLevel() {
 		return $this->logLevel;
 	}
-	
+
 	/**
 	 * Invoke modules. If a parameter is passed,
 	 * only this modules gets invoked. Otherwise
@@ -345,19 +430,92 @@ class Chameleon {
 	}
 
 	/**
-	 * Returns a module specified by the passed name.
-	 * 
-	 * @param string $name name of the wanted module
-	 * @return Module module with the passed name
+	 * Check if the bundles path contains the passed bundle. Returns 
+	 * the path to the bundle folder if it is a bundle or otherwise
+	 * <code>false</code>.
+	 *
+	 * @param string $bundle id of the bundle
+	 * @return mixed 
 	 */
-	public function getModule($name) {
-		if ($this->modules->exists($name)) {
-			return $this->modules[$name];
+	private function isBundle($bundle) {
+		$file = $this->bundlesPath . '/' . $bundle . '/' . self::BUNDLE_XML;
+		if (file_exists($file)) {
+			return $this->bundlesPath . '/' . $bundle;
 		} else {
-			return $this->loadModule($name);
+			return false;
 		}
 	}
-	
+
+	/**
+	 * Loads a bundle specified by the passed id.
+	 * 
+	 * @param string $id id of the bundle to load
+	 * @return Bundle bundle with the passed id
+	 */
+	private function loadBundle($id) {
+		if (!isset ($this->bundles[$id])) { // only load bundle if not already loaded
+			if ($bundleFolder = $this->isBundle($id)) {
+				if ($this->disabledBundles->contains($id)) { // only load bundle which are not disabled
+					$this->log->trail('Disable modules of disabled bundle \'' . $id . '\'.');
+		
+					// parse bundle xml file
+					$xml = simplexml_load_file($bundleFolder . '/' . self::BUNDLE_XML);
+
+					// read modules
+					foreach ($xml->module as $module) {
+						$this->disabledModules->append((string) $module);
+						$this->log->trail('Disabled module \'' . $module . '\'.');
+					}
+
+					$this->log->trail('Disabled modules of disabled bundle \'' . $id . '\'.');
+				} else {
+					$this->log->trail('Loading bundle \'' . $id . '\'.');
+
+					// parse bundle xml file
+					$xml = simplexml_load_file($bundleFolder . '/' . self::BUNDLE_XML);
+
+					$name = (string) $xml->name;
+					$description = (string) $xml->description;
+					$update = (string) $xml->update;
+
+					// create module
+					$bundle = new Bundle($this, $id, $name, $update);
+					$bundle->setDescription($description);
+					$this->bundles[$id] = $bundle;
+
+					// read modules
+					foreach ($xml->module as $module) {
+						try {
+							$bundle->addModule($this->getModule((string) $module));
+						} catch(ModuleNotFoundException $e) {
+							$this->log->warn($e->getMessage());
+						}
+					}
+
+					$this->log->trail('Loaded bundle \'' . $id . '\'.');
+
+					return $bundle;
+				}
+			} else {
+				throw new BundleNotFoundException('Bundle \'' . $id . '\' not found!');
+			}
+		}
+	}
+
+	/**
+	 * Returns a module specified by the passed id.
+	 * 
+	 * @param string $id id of the wanted module
+	 * @return Module module with the passed id
+	 */
+	public function getModule($id) {
+		if ($this->modules->exists($id)) {
+			return $this->modules[$id];
+		} else {
+			return $this->loadModule($id);
+		}
+	}
+
 	/**
 	 * Check if the modules path contains the passed module. Returns 
 	 * the path to the module folder if it is a module or otherwise
@@ -367,9 +525,9 @@ class Chameleon {
 	 * @return mixed 
 	 */
 	private function isModule($module) {
-		$file = $this->path . '/' . $module . '/' . self::MODULE_XML;
+		$file = $this->modulesPath . '/' . $module . '/' . self::MODULE_XML;
 		if (file_exists($file)) {
-			return $this->path . '/' . $module;
+			return $this->modulesPath . '/' . $module;
 		} else {
 			return false;
 		}
@@ -378,16 +536,16 @@ class Chameleon {
 	/**
 	 * Loads a module specified by the passed name.
 	 * 
-	 * @param string $name name of the module to load
-	 * @return Module module with the passed name
+	 * @param string $id id of the module to load
+	 * @return Module module with the passed id
 	 */
-	private function loadModule($name) {
-		if (!$this->disabledModules->contains($name)) { // only load modules which are not disabled
-			if (!isset ($this->modules[$name])) { // only load module if not already loaded
+	private function loadModule($id) {
+		if (!$this->disabledModules->contains($id)) { // only load modules which are not disabled
+			if (!isset ($this->modules[$id])) { // only load module if not already loaded
 
-				if ($moduleFolder = $this->isModule($name)) {
+				if ($moduleFolder = $this->isModule($id)) {
 
-					$this->log->trail('Loading module \'' . $name . '\'.');
+					$this->log->trail('Loading module \'' . $id . '\'.');
 
 					// parse module xml file
 					$xml = simplexml_load_file($moduleFolder . '/' . self::MODULE_XML);
@@ -396,7 +554,7 @@ class Chameleon {
 						try {
 							$this->loadModule((string) $requiredModule);
 						} catch (ModuleNotFoundException $e) {
-							throw new ModuleMissingException('Module \'' . $name . '\' requires module \'' . (string) $requiredModule . '\' which could not be loaded!');
+							throw new ModuleMissingException('Module \'' . $id . '\' requires module \'' . (string) $requiredModule . '\' which could not be loaded!');
 						}
 					}
 
@@ -413,8 +571,8 @@ class Chameleon {
 					}
 
 					// create module
-					$module = new $moduleClass ($this, $name);
-					$this->modules[$name] = $module;
+					$module = new $moduleClass ($this, $id);
+					$this->modules[$id] = $module;
 
 					// read extension points
 					foreach ($xml->extensionPoint as $ep) {
@@ -435,12 +593,12 @@ class Chameleon {
 							$extensionPoint->createExtension(new XMLExtensionPointElement($e));
 						}
 					}
-					
-					$this->log->trail('Loaded module \'' . $name . '\'.');
+
+					$this->log->trail('Loaded module \'' . $id . '\'.');
 
 					return $module;
 				} else {
-					throw new ModuleNotFoundException('Module \'' . $name . '\' not found!');
+					throw new ModuleNotFoundException('Module \'' . $id . '\' not found!');
 				}
 			}
 		}

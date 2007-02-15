@@ -181,7 +181,7 @@ class AnomeyProcessorExtension extends Extension {
 	}
 	
 	public function __construct(ExtensionPointElement $element) {
-		$this->class = $element->getValue();
+		$this->class = trim($element->getValue());
 	}
 }
 
