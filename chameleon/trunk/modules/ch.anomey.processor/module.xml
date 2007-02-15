@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<module xmlns="http://anomey.ch/core/module" id="ch.anomey.processor">
+<module xmlns="http://anomey.ch/core/module" id="ch.anomey.processor"
+	version="0.1">
 	<require>
-		<module>ch.anomey.util</module>
+		<module version="0.1">ch.anomey.util</module>
 	</require>
 	<class>AnomeyProcessorModule</class>
 	<extensionPoint>
@@ -9,5 +10,7 @@
 		<description>request processors</description>
 		<class>AnomeyProcessorExtension</class>
 	</extensionPoint>
-	<extension xmlns="http://anomey.ch/core/processor">AnomeyModuleProcessor</extension>
+	<extension xmlns="http://anomey.ch/core/processor">
+		AnomeyModuleProcessor
+	</extension>
 </module>

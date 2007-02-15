@@ -174,7 +174,7 @@ class AnomeySecurityModule extends Module implements AnomeySecurityProvider {
 	private $providers;
 
 	public function invoke() {
-		$this->log = new Log($this->getName(), $this->getLogLevel());
+		$this->log = new Log($this->getId(), $this->getLogLevel());
 		$this->providers = new Vector();
 
 		if(!$this->getExtensions('http://anomey.ch/security/provider')->count() > 0) {
