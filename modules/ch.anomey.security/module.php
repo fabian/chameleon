@@ -264,7 +264,7 @@ class AnomeySecurityProviderExtension extends Extension {
 	}
 
 	public function __construct(ExtensionPointElement $element) {
-		$this->provider = (string) $element->getChildrenByName('provider')->getValue();
+		$this->provider = trim($element->getChildrenByName('provider')->getValue());
 	}
 }
 
