@@ -260,7 +260,7 @@ class XMLExtensionPointElement implements ExtensionPointElement {
 		foreach ($xml->children() as $child) {
 			$this->children[] = new self($child);
 		}
-		$this->value = (string) $xml;
+		$this->value = trim($xml);
 		$this->attributes = new Vector();
 		foreach ($xml->attributes() as $key => $value) {
 			$this->attributes[$key] = (string) $value;
@@ -372,7 +372,7 @@ class Chameleon {
 		// parse disabled modules
 		$xml = simplexml_load_file('xml/ch.anomey.chameleon/configuration.xml');
 		foreach ($xml->disable->bundle as $bundle) {
-			$this->disabledBundles->append((string) $bundle);
+			$this->disabledBundles->append(trim($bundle));
 		}
 
 		$this->logLevel = (int) $xml->log->level;
@@ -463,8 +463,8 @@ class Chameleon {
 
 					// read modules
 					foreach ($xml->module as $module) {
-						$this->disabledModules->append((string) $module);
-						$this->log->trail('Disabled module \'' . $module . '\'.');
+						$this->disabledModules->append(trim($module));
+						$this->log->trail('Disabled module \'' . trim($module) . '\'.');
 					}
 
 					$this->log->trail('Disabled modules of disabled bundle \'' . $id . '\'.');
@@ -474,9 +474,9 @@ class Chameleon {
 					// parse bundle xml file
 					$xml = simplexml_load_file($bundleFolder . '/' . self::BUNDLE_XML);
 
-					$name = (string) $xml->name;
-					$description = (string) $xml->description;
-					$update = (string) $xml->update;
+					$name = trim($xml->name);
+					$description = trim($xml->description);
+					$update = trim($xml->update);
 
 					// create module
 					$bundle = new Bundle($this, $id, $name, $update);
@@ -486,7 +486,7 @@ class Chameleon {
 					// read modules
 					foreach ($xml->module as $module) {
 						try {
-							$bundle->addModule($this->getModule((string) $module));
+							$bundle->addModule($this->getModule(trim($module)));
 						} catch(ModuleNotFoundException $e) {
 							$this->log->warn($e->getMessage());
 						}
@@ -552,9 +552,9 @@ class Chameleon {
 
 					foreach ($xml->require->module as $requiredModule) {
 						try {
-							$this->loadModule((string) $requiredModule);
+							$this->loadModule(trim($requiredModule));
 						} catch (ModuleNotFoundException $e) {
-							throw new ModuleMissingException('Module \'' . $id . '\' requires module \'' . (string) $requiredModule . '\' which could not be loaded!');
+							throw new ModuleMissingException('Module \'' . $id . '\' requires module \'' . trim($requiredModule) . '\' which could not be loaded!');
 						}
 					}
 
@@ -563,7 +563,7 @@ class Chameleon {
 						include_once $moduleFolder . '/' . self::MODULE_PHP;
 					}
 
-					$moduleClass = (string) $xml->class;
+					$moduleClass = trim($xml->class);
 
 					// if no module class is defined, us default class
 					if ($moduleClass == '') {
@@ -576,8 +576,8 @@ class Chameleon {
 
 					// read extension points
 					foreach ($xml->extensionPoint as $ep) {
-						$extensionClass = (string) $ep->class;
-						$namespace = (string) $ep->namespace;
+						$extensionClass = trim($ep->class);
+						$namespace = trim($ep->namespace);
 
 						// add extension point to registry
 						$this->extensionRegistry->addExtensionPoint(new ExtensionPoint($namespace, $extensionClass));

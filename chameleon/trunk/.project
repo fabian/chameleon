@@ -2,18 +2,17 @@
 <projectDescription>
 	<name>chameleon</name>
 	<comment></comment>
-	<projects>
-	</projects>
+	<projects></projects>
 	<buildSpec>
 		<buildCommand>
 			<name>org.eclipse.wst.validation.validationbuilder</name>
-			<arguments>
-			</arguments>
+			<arguments></arguments>
 		</buildCommand>
 		<buildCommand>
-			<name>org.eclipse.php.core.PhpIncrementalProjectBuilder</name>
-			<arguments>
-			</arguments>
+			<name>
+				org.eclipse.php.core.PhpIncrementalProjectBuilder
+			</name>
+			<arguments></arguments>
 		</buildCommand>
 	</buildSpec>
 	<natures>
