@@ -119,13 +119,13 @@ class Group {
 }
 
 class Resource {
-	
+
 	private $name;
-	
+
 	public function getName() {
 		return $this->name;
 	}
-	
+
 	public function setName($name) {
 		$this->name = $name;
 	}
@@ -149,7 +149,7 @@ interface AnomeySecurityProvider {
 	 * @return Vector
 	 */
 	public function getGroups();
-	
+
 	public function getResources();
 
 	/**
@@ -263,7 +263,7 @@ class AnomeySecurityProviderExtension extends Extension {
 		return $this->provider;
 	}
 
-	public function __construct(ExtensionPointElement $element) {
+	public function load(ExtensionPointElement $element) {
 		$this->provider = trim($element->getChildrenByName('provider')->getValue());
 	}
 }

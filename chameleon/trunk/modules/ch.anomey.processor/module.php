@@ -7,9 +7,9 @@ class Request extends Bean {
 	public function getMethod() {
 		return $this->method;
 	}
-	
+
 	private $url;
-	
+
 	public function getURL() {
 		return $this->url;
 	}
@@ -89,9 +89,9 @@ class Request extends Bean {
 }
 
 class AnomeyProcessorModule extends Module {
-	
+
 	private $url;
-	
+
 	public function invoke() {
 		$this->parse();
 	}
@@ -141,7 +141,7 @@ class AnomeyProcessorModule extends Module {
 
 		// Merge the parameters passed over POST and GET.
 		$parameters = new Vector(array_merge($_POST, $_GET));
-	
+
 		// Wipe out nasty php quotes ...
 		if (get_magic_quotes_gpc()) {
 			$parameters = String :: stripslashes($parameters);
@@ -160,27 +160,28 @@ class AnomeyProcessorModule extends Module {
 		$request = new Request($method, $this->url, $trail, $session, $cookie);
 		$request->addParameters($parameters);
 		$request->addMessages($messages);
-		
+
 		foreach($this->getExtensions('http://anomey.ch/core/processor') as $extension) {
 			$class = $extension->getClass();
 			$processor = new $class($request);
 			$processor->process();
 		}
 	}
-	
+
 	public function getURL() {
 		return $this->url;
 	}
 }
 
 class AnomeyProcessorExtension extends Extension {
+
 	private $class;
-	
+
 	public function getClass() {
 		return $this->class;
 	}
-	
-	public function __construct(ExtensionPointElement $element) {
+
+	public function load(ExtensionPointElement $element) {
 		$this->class = trim($element->getValue());
 	}
 }
@@ -191,16 +192,16 @@ interface AnomeyProcessor {
 }
 
 class AnomeyModuleProcessor implements AnomeyProcessor {
-	
+
 	private $trail;
-	
+
 	private $runpath;
-	
+
 	public function __construct(Request $request) {
 		$this->trail = $request->getTrail();
 		$this->runpath = $request->getURL()->getRunpath();
 	}
-	
+
 	public function process() {
 		echo '<a href="' . $this->runpath . '/foo/bar">Goto foobar</a><br/>';
 		echo $this->trail;

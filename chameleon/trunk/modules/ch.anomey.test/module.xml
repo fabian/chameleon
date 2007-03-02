@@ -3,6 +3,7 @@
 	version="0.1">
 	<require>
 		<module version="0.1">ch.anomey.security</module>
+		<module version="0.1">ch.anomey.view.example</module>
 	</require>
 	<class>AnomeyTestModule</class>
 </module>
