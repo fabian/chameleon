@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module xmlns="http://anomey.ch/core/module" id="ch.anomey.view"
+	version="0.1">
+	<class>AnomeyViewModule</class>
+	<extensionPoint>
+		<namespace>http://anomey.ch/view</namespace>
+		<description>view</description>
+		<class>AnomeyViewExtension</class>
+	</extensionPoint>
+</module>

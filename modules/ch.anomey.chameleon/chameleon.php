@@ -62,7 +62,7 @@ class Bundle {
 	 * @var Chameleon
 	 */
 	private $chameleon;
-	
+
 	private $id;
 
 	private $name;
@@ -83,7 +83,7 @@ class Bundle {
 		$this->update = '';
 		$this->modules = new Vector();
 	}
-	
+
 	public function getId() {
 		return $this->id;
 	}
@@ -166,11 +166,29 @@ class Module {
 }
 
 abstract class Extension {
-	/**
-	 * Default constructor which can be overloaded to read information
-	 * from the extension point element.
+
+	/*
+	 * @var Module
 	 */
-	public function __construct(ExtensionPointElement $element) {
+	private $module = null;
+
+	/**
+	 * @return Module
+	 */
+	public function getModule() {
+		return $this->module;
+	}
+
+	public function setModule(Module $module) {
+		$this->module = $module;
+	}
+
+	/**
+	 * Method which can be overloaded to read information
+	 * from the extension point element. Gets called after
+	 * all attributes of Extension are set.
+	 */
+	public function load(ExtensionPointElement $element) {
 
 	}
 }
@@ -210,8 +228,11 @@ class ExtensionPoint {
 		$this->extensions[] = $e;
 	}
 
-	public function createExtension(ExtensionPointElement $epe) {
-		$this->extensions[] = new $this->extensionClass($epe);
+	public function createExtension(ExtensionPointElement $epe, Module $module) {
+		$extension = new $this->extensionClass();
+		$extension->setModule($module);
+		$extension->load($epe);
+		$this->extensions[] = $extension;
 	}
 }
 
@@ -457,7 +478,7 @@ class Chameleon {
 			if ($bundleFolder = $this->isBundle($id)) {
 				if ($this->disabledBundles->contains($id)) { // only load bundle which are not disabled
 					$this->log->trail('Disable modules of disabled bundle \'' . $id . '\'.');
-		
+
 					// parse bundle xml file
 					$xml = simplexml_load_file($bundleFolder . '/' . self::BUNDLE_XML);
 
@@ -590,7 +611,7 @@ class Chameleon {
 						// parse extensions of current extension point
 						foreach ($xml->xpath('//t:extension') as $e) {
 							// add extension to extension point
-							$extensionPoint->createExtension(new XMLExtensionPointElement($e));
+							$extensionPoint->createExtension(new XMLExtensionPointElement($e), $module);
 						}
 					}
 

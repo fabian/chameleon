@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module xmlns="http://anomey.ch/core/module" id="ch.anomey.view.example"
+	version="0.1">
+	<require>
+		<module version="0.1">ch.anomey.view</module>
+	</require>
+	<extension xmlns="http://anomey.ch/view">
+		<view id="ch.anomey.view.example">views/example.view.php</view>
+	</extension>
+</module>
