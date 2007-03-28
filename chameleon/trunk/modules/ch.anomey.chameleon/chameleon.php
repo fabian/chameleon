@@ -4,10 +4,10 @@ require_once 'util.php';
 require_once 'log.php';
 
 /**
- * Central registry of all extensions, extension points 
+ * Central registry of all extensions, extension points
  * and namespaces. Every module owns a reference to this registry
  * to load extensions.
- * 
+ *
  * @package ch.anomey.chameleon
  * @author Fabian Vogler
  */
@@ -24,7 +24,7 @@ class ExtensionRegistry {
 
 	/**
 	 * Adds an extension point to the registry.
-	 * 
+	 *
 	 * @param ExtensionPoint $ep the extension point
 	 */
 	public function addExtensionPoint(ExtensionPoint $ep) {
@@ -34,7 +34,7 @@ class ExtensionRegistry {
 	/**
 	 * Returns an extension point with the passed namespace. If the
 	 * extension point could not be found it returns <code>null</code.>
-	 * 
+	 *
 	 * @param string $ns the namespace of the wanted extension point
 	 */
 	public function getExtensionPoint($ns) {
@@ -117,14 +117,14 @@ class Bundle {
  * The module class which can be overloaded by the modules.
  * It makes the extension point registry avaible to the modules
  * so they can find the defined extensions.
- * 
+ *
  * @author Fabian Vogler
  */
 class Module {
 
 	/**
 	 * Reference to chameleon.
-	 * 
+	 *
 	 * @var Chameleon
 	 */
 	private $chameleon;
@@ -149,7 +149,7 @@ class Module {
 	}
 
 	/**
-	 * This method can be overloaded. It get's called after all 
+	 * This method can be overloaded. It get's called after all
 	 * modules are loaded if the chameleon user want's so.
 	 */
 	public function invoke() {
@@ -250,7 +250,7 @@ interface ExtensionPointElement {
 
 /**
  * Simple xml implementation of extension point element.
- * 
+ *
  * @see ExtensionPointElement
  */
 class XMLExtensionPointElement implements ExtensionPointElement {
@@ -369,14 +369,14 @@ class Chameleon {
 
 	/**
 	 * Cache with all loaded modules.
-	 * 
+	 *
 	 * @var Vector
 	 */
 	private $modules;
 
 	/**
 	 * Cache with all loaded bundles.
-	 * 
+	 *
 	 * @var Vector
 	 */
 	private $bundles;
@@ -451,12 +451,12 @@ class Chameleon {
 	}
 
 	/**
-	 * Check if the bundles path contains the passed bundle. Returns 
+	 * Check if the bundles path contains the passed bundle. Returns
 	 * the path to the bundle folder if it is a bundle or otherwise
 	 * <code>false</code>.
 	 *
 	 * @param string $bundle id of the bundle
-	 * @return mixed 
+	 * @return mixed
 	 */
 	private function isBundle($bundle) {
 		$file = $this->bundlesPath . '/' . $bundle . '/' . self::BUNDLE_XML;
@@ -469,7 +469,7 @@ class Chameleon {
 
 	/**
 	 * Loads a bundle specified by the passed id.
-	 * 
+	 *
 	 * @param string $id id of the bundle to load
 	 * @return Bundle bundle with the passed id
 	 */
@@ -525,7 +525,7 @@ class Chameleon {
 
 	/**
 	 * Returns a module specified by the passed id.
-	 * 
+	 *
 	 * @param string $id id of the wanted module
 	 * @return Module module with the passed id
 	 */
@@ -538,12 +538,12 @@ class Chameleon {
 	}
 
 	/**
-	 * Check if the modules path contains the passed module. Returns 
+	 * Check if the modules path contains the passed module. Returns
 	 * the path to the module folder if it is a module or otherwise
 	 * <code>false</code>.
 	 *
 	 * @param string $module name of the folder
-	 * @return mixed 
+	 * @return mixed
 	 */
 	private function isModule($module) {
 		$file = $this->modulesPath . '/' . $module . '/' . self::MODULE_XML;
@@ -556,7 +556,7 @@ class Chameleon {
 
 	/**
 	 * Loads a module specified by the passed name.
-	 * 
+	 *
 	 * @param string $id id of the module to load
 	 * @return Module module with the passed id
 	 */
@@ -571,11 +571,13 @@ class Chameleon {
 					// parse module xml file
 					$xml = simplexml_load_file($moduleFolder . '/' . self::MODULE_XML);
 
-					foreach ($xml->require->module as $requiredModule) {
-						try {
-							$this->loadModule(trim($requiredModule));
-						} catch (ModuleNotFoundException $e) {
-							throw new ModuleMissingException('Module \'' . $id . '\' requires module \'' . trim($requiredModule) . '\' which could not be loaded!');
+					if($xml->require->module != null) {
+						foreach ($xml->require->module as $requiredModule) {
+							try {
+								$this->loadModule(trim($requiredModule));
+							} catch (ModuleNotFoundException $e) {
+								throw new ModuleMissingException('Module \'' . $id . '\' requires module \'' . trim($requiredModule) . '\' which could not be loaded!');
+							}
 						}
 					}
 
