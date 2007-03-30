@@ -1,12 +1,36 @@
 <?php
 
+/**
+ * Factory class for the Storable interface.
+ */
+abstract class Storage {
+
+	/**
+	 * Opens a file storage.
+	 *
+	 * @param string $file
+	 * @return ObjectContainer
+	 */
+	public static function openFile($file) {
+		return new XMLObjectContainer($file);
+	}
+}
+
 interface Storable {
 
 }
 
-class XMLStoreage implements Storable {
+interface ObjectContainer {
+	public function set(Storable $object);
+	public function commit();
+	public function search($query);
+}
+
+class XMLObjectContainer implements ObjectContainer {
 
 	private $file;
+
+	private $autocommit = true;
 
 	private $objects = array();
 
@@ -14,18 +38,21 @@ class XMLStoreage implements Storable {
 		$this->file = $file;
 	}
 
-	public function store(Storable $object) {
+	public function set(Storable $object) {
 		$id = spl_object_hash($object);
 		$this->objects[$id] = $object;
-		$this->save();
+		if($this->autocommit) {
+			$this->commit();
+		}
 	}
 
 	/**
-	 * Adds object to internal memory to be saved.
+	 * Saves objects in internal memory.
 	 */
-	public function prepare($object) {
-		$id = spl_object_hash($object);
-		$this->objects[$id] = $object;
+	public function commit() {
+		foreach ($this->objects as $object) {
+			
+		}
 	}
 
 	public function search($query) {
@@ -36,15 +63,6 @@ class XMLStoreage implements Storable {
 			}
 		}
 		return $matches;
-	}
-
-	/**
-	 * Saves objects in internal memory.
-	 */
-	public function save() {
-		foreach ($this->objects as $object) {
-			
-		}
 	}
 }
 
