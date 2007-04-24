@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<roles>
+	<role id="63b51d3cad34649c95aab6fcf31997ee" name="admin">
+		<role id="60affeeefcaabfd3ef31e46983229b00" name="max" />
+	</role>
+	<role id="8b9d49ab958bcdcac4e803fd75673b30" name="peter" />
+</roles>
