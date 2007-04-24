@@ -1,42 +1,47 @@
 <?php
 
-/**
- * User class which represents a user of the system. A user
- * can have multiple groups.
- */
-class User {
+class Role {
 
 	/**
-	 * The id of the user. Mostly an integer or a string.
+	 * The id of the role. A unique string.
 	 *
 	 * @var mixed
 	 */
 	private $id;
 
 	/**
-	 * Nickname of the user - used to identify the user.
+	 * Describing name of the role. 
 	 *
 	 * @var string
 	 */
 	private $name;
-
+	
+	/**
+	 * The parent role to inherit from. <code>null</code> if
+	 * there is no parent.
+	 *
+	 * @var Role
+	 */
+	private $parent;
+	
 	/**
 	 * @var Vector
 	 */
-	private $groups;
-
-	public function __construct() {
-		$this->id = 0;
-		$this->name = '';
-		$this->groups = new Vector();
+	private $childs;
+	
+	public function __construct($id, $name, $parent = null) {
+		$this->id = $id;
+		$this->name = $name;
+		$this->parent = $parent;
+		$this->childs = new Vector();
+		
+		if($parent != null) {
+			$parent->addChild($this);
+		}
 	}
 
 	public function getId() {
 		return $this->id;
-	}
-
-	public function setId($id) {
-		$this->id = $id;
 	}
 
 	public function getName() {
@@ -46,74 +51,20 @@ class User {
 	public function setName($name) {
 		$this->name = $name;
 	}
-
-	public function getGroups() {
-		return $this->groups;
-	}
-
-	public function addGroup(Group $group) {
-		if(!$this->groups->contains($group)) {
-			$this->groups->append($group);
-			$group->addUser($this); // add user to group
-		}
-	}
-
-	public function removeGroup(Group $group) {
-		if($this->groups->contains($group)) {
-			$this->groups->remove($group);
-			$group->removeUser($this);
-		}
-	}
-}
-
-class Group {
-
-	private $id;
-
-	private $name;
-
+	
 	/**
-	 * @var Vector
+	 * Returns the parent of the role or <code>null</code>
+	 * if there is no parent.
+	 * 
+	 * @return Role
 	 */
-	private $users;
-
-	public function __construct() {
-		$this->id = 0;
-		$this->name = '';
-		$this->users = new Vector();
+	public function getParent() {
+		return $this->parent;
 	}
-
-	public function getId() {
-		return $this->id;
-	}
-
-	public function setId($id) {
-		$this->id = $id;
-	}
-
-	public function getName() {
-		return $this->name;
-	}
-
-	public function setName($name) {
-		$this->name = $name;
-	}
-
-	public function getUsers() {
-		return $this->users;
-	}
-
-	public function removeUser(User $user) {
-		if($this->users->contains($user)) {
-			$user->removeGroup($this);
-			$this->users->remove($user);
-		}
-	}
-
-	public function addUser(User $user) {
-		if(!$this->users->contains($user)) {
-			$this->users->append($user);
-			$user->addGroup($this); // add group to user
+	
+	public function addChild(Role $role) {
+		if(!$this->childs->contains($role)) {
+			$this->childs->append($role);
 		}
 	}
 }
@@ -137,28 +88,21 @@ class Resource {
 interface AnomeySecurityProvider {
 
 	/**
-	 * Returns a Vector with all users.
+	 * Returns a Vector with all roles.
 	 *
 	 * @return Vector
 	 */
-	public function getUsers();
-
-	/**
-	 * Returns a Vector with all groups.
-	 *
-	 * @return Vector
-	 */
-	public function getGroups();
+	public function getRoles();
 
 	public function getResources();
 
 	/**
-	 * Tries to authenticate the user with the passed parameters.
+	 * Tries to authenticate the user with the passed request.
 	 *
-	 * @param array $parameters array with authentication parameters
+	 * @param Request $request the request to authenticate
 	 * @return mixed <code>false</code> on failure, otherwise the User object
 	 */
-	public function authenticate($parameters);
+	public function authenticate(Request $request);
 }
 
 class AnomeySecurityModule extends Module implements AnomeySecurityProvider {
@@ -187,47 +131,24 @@ class AnomeySecurityModule extends Module implements AnomeySecurityProvider {
 		}
 	}
 
-	public function getUsers() {
-		$users = new Vector();
+	public function getRoles() {
+		$roles = new Vector();
 		foreach($this->providers as $provider) {
-			$users->merge($provider->getUsers());
+			$roles->merge($provider->getRoles());
 		}
-		return $users;
+		return $roles;
 	}
 
 	/**
-	 * Returns a user.
+	 * Returns a role.
 	 *
 	 * @param string $id
-	 * @return User
+	 * @return Role
 	 */
-	public function getUser($id) {
-		foreach($this->getUsers() as $user) {
-			if($user->getId() == $id) {
-				return $user;
-			}
-		}
-		return null;
-	}
-
-	public function getGroups() {
-		$groups = new Vector();
-		foreach($this->providers as $provider) {
-			$groups->merge($provider->getGroups());
-		}
-		return $groups;
-	}
-
-	/**
-	 * Returns a group.
-	 *
-	 * @param string $id
-	 * @return Group
-	 */
-	public function getGroup($id) {
-		foreach($this->getGroups() as $group) {
-			if($$group->getId() == $id) {
-				return $group;
+	public function getRole($id) {
+		foreach($this->getRoles() as $role) {
+			if($role->getId() == $id) {
+				return $role;
 			}
 		}
 		return null;
@@ -241,11 +162,11 @@ class AnomeySecurityModule extends Module implements AnomeySecurityProvider {
 		return $resources;
 	}
 
-	public function authenticate($parameters) {
+	public function authenticate(Request $request) {
 		foreach($this->providers as $provider) {
-			$user = $provider->authenticate($parameters);
-			if($user !== false) {
-				return $user;
+			$role = $provider->authenticate($request);
+			if($role !== false) {
+				return $role;
 			}
 		}
 		return false;

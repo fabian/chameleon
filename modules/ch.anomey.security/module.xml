@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module xmlns="http://anomey.ch/core/module" id="ch.anomey.security"
 	version="0.1">
+	<require>
+		<module version="0.1">ch.anomey.util</module>
+	</require>
 	<class>AnomeySecurityModule</class>
 	<extensionPoint>
 		<namespace>http://anomey.ch/security/provider</namespace>

@@ -9,49 +9,26 @@ class AnomeyXMLSecurityProvider implements AnomeySecurityProvider  {
 	/**
 	 * @var Vector
 	 */
-	private $users;
-
-	/**
-	 * @var Vector
-	 */
-	private $groups;
+	private $roles;
 
 	/**
 	 * @var Vector
 	 */
 	private $resources;
+	
+	private function parseRole(SimpleXMLElement $xml, Role $parent = null) {
+		foreach($xml->role as $rolexml) {
+			$role = new Role((string) $rolexml['id'], (string) $rolexml['name'], $parent);
+			$this->roles->set($role->getId(), $role);
+			$this->parseRole($rolexml, $role);
+		}
+	}
 
 	public function __construct() {
-		$this->users = new Vector();
+		$this->roles = new Vector();
 		try {
-			$usersXml = XML::load('xml/ch.anomey.security.xml/users.xml');
-			foreach($usersXml->user as $userXml) {
-				$user = new User();
-				$user->setId((string) $userXml['id']);
-				$user->setName((string) $userXml);
-				$this->users->set($user->getId(), $user);
-			}
-		} catch(FileNotFoundException $e) {
-		}
-
-		$this->groups = new Vector();
-		try {
-			$groupsXml = XML::load('xml/ch.anomey.security.xml/groups.xml');
-			foreach($groupsXml->group as $groupXml) {
-				$group = new Group();
-				$group->setId((string) $groupXml['id']);
-				$group->setName((string) $groupXml['name']);
-
-				// load users into group
-				foreach($groupXml->user as $userXml) {
-					$user = $this->users->get((string) $userXml['id']);
-					if($user != null) {
-						$group->addUser($user);
-					}
-				}
-
-				$this->groups->set($group->getId(), $group);
-			}
+			$rolesxml = XML::load('xml/ch.anomey.security.xml/roles.xml');
+			$this->parseRole($rolesxml);
 		} catch(FileNotFoundException $e) {
 		}
 
@@ -67,12 +44,8 @@ class AnomeyXMLSecurityProvider implements AnomeySecurityProvider  {
 		}
 	}
 
-	public function getUsers() {
-		return $this->users->getValues();
-	}
-
-	public function getGroups() {
-		return $this->groups->getValues();
+	public function getRoles() {
+		return $this->roles->getValues();
 	}
 	
 	public function getResources() {
@@ -80,13 +53,13 @@ class AnomeyXMLSecurityProvider implements AnomeySecurityProvider  {
 	}
 
 	/**
-	 * Tries to authenticate the user with the parameters
-	 * $parameters[username] and $parameters[password].
+	 * Tries to authenticate the role with the parameters
+	 * username and password.
 	 *
-	 * @param array $parameters array with login parameters
-	 * @return mixed <code>false</code> on failure, otherwise the User object
+	 * @param Request $request the request to authenticate
+	 * @return mixed <code>false</code> on failure, otherwise the role object
 	 */
-	public function authenticate($parameters) {
+	public function authenticate(Request $request) {
 		return false;
 	}
 }

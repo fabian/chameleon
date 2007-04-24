@@ -265,4 +265,92 @@ class ApplicationError extends Exception {}
 
 class FileNotFoundException extends Exception {}
 
+class Request extends Bean {
+
+	private $method;
+
+	public function getMethod() {
+		return $this->method;
+	}
+
+	private $url;
+
+	public function getURL() {
+		return $this->url;
+	}
+
+	private $trail;
+
+	public function getTrail() {
+		return $this->trail;
+	}
+
+	public function setTrail($trail) {
+		$this->trail = $trail;
+	}
+
+	private $session;
+
+	public function getSession() {
+		return $this->session;
+	}
+
+	private $cookie;
+
+	public function getCookie() {
+		return $this->cookie;
+	}
+
+	private $parameters;
+
+	public function getParameters() {
+		return $this->parameters;
+	}
+
+	public function getParameter($name, $default = '') {
+		return Value :: get($this->parameters[$name], $default);
+	}
+
+	public function addParameters($parameters) {
+		$this->parameters->merge($parameters);
+	}
+
+	public function addParameter($key, $value) {
+		$this->parameters->set($key, $value);
+	}
+
+	private $messages;
+
+	public function getMessages() {
+		$this->flushMessages();
+		return $this->messages;
+	}
+
+	private function flushMessages() {
+		foreach ($this->messages as $key => $value) {
+			if ($value->isDisplayed()) {
+				unset ($this->messages[$key]);
+			}
+		}
+	}
+
+	public function addMessage($message) {
+		$this->messages[] = $message;
+	}
+
+	public function addMessages($messages) {
+		$this->messages->merge($messages);
+	}
+
+	public function __construct($method, URL $url, $trail, Session $session, Cookie $cookie) {
+		$this->method = $method;
+		$this->url = $url;
+		$this->trail = $trail;
+		$this->session = $session;
+		$this->cookie = $cookie;
+		$this->parameters = new Vector();
+		$this->messages = new Vector();
+	}
+}
+
 ?>
