@@ -1,6 +1,13 @@
 <?php
 
-class Vector extends ArrayObject {
+interface Collection {
+	
+	public function set($key, $value);
+
+	public function get($key);
+}
+
+class Vector extends ArrayObject implements Collection {
 
 	public function set($key, $value) {
 		$this[$key] = $value;
