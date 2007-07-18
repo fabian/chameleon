@@ -1,72 +1,68 @@
 <?php
 
-class Role {
+interface User {
 
 	/**
-	 * The id of the role. A unique string.
+	 * Returns the id of the user. A unique string.
 	 *
-	 * @var mixed
+	 * @return string
 	 */
-	private $id;
+	public function getId();
 
 	/**
-	 * Describing name of the role. 
+	 * Returns the user's nick name. 
 	 *
-	 * @var string
+	 * @return string
 	 */
-	private $name;
+	public function getNick();
 	
 	/**
-	 * The parent role to inherit from. <code>null</code> if
-	 * there is no parent.
+	 * Returns the roles the user is assigned to.
+	 * 
+	 * @return Vector
+	 */
+	public function getRoles();
+	
+	/**
+	 * Returns <code>true</code> if the user is assigned in any 
+	 * way to the passed role and otherwise <code>false</code>.
+	 * 
+	 * @return boolean
+	 */
+	public function hasRole(Role $role);
+}
+
+interface Role {
+
+	/**
+	 * Returns the id of the role. A unique string.
+	 *
+	 * @return string
+	 */
+	public function getId();
+
+	/**
+	 * Returns a describing name of the role. 
+	 *
+	 * @return string
+	 */
+	public function getName();
+	
+	/**
+	 * Returns the parent of the role to inherit from 
+	 * or <code>null</code> if there is no parent role.
 	 *
 	 * @var Role
 	 */
-	private $parent;
+	public function getParent();
 	
 	/**
-	 * @var Vector
-	 */
-	private $childs;
-	
-	public function __construct($id, $name, $parent = null) {
-		$this->id = $id;
-		$this->name = $name;
-		$this->parent = $parent;
-		$this->childs = new Vector();
-		
-		if($parent != null) {
-			$parent->addChild($this);
-		}
-	}
-
-	public function getId() {
-		return $this->id;
-	}
-
-	public function getName() {
-		return $this->name;
-	}
-
-	public function setName($name) {
-		$this->name = $name;
-	}
-	
-	/**
-	 * Returns the parent of the role or <code>null</code>
-	 * if there is no parent.
+	 * Returns <code>true</code> if the role inherits from the  
+	 * passed role in any way and otherwise <code>false</code>.
 	 * 
-	 * @return Role
+	 * @return boolean
 	 */
-	public function getParent() {
-		return $this->parent;
-	}
-	
-	public function addChild(Role $role) {
-		if(!$this->childs->contains($role)) {
-			$this->childs->append($role);
-		}
-	}
+	public function hasRole(Role $role);
 }
 
 class Resource {
@@ -88,19 +84,10 @@ class Resource {
 interface AnomeySecurityProvider {
 
 	/**
-	 * Returns a Vector with all roles.
-	 *
-	 * @return Vector
-	 */
-	public function getRoles();
-
-	public function getResources();
-
-	/**
 	 * Tries to authenticate the user with the passed request.
 	 *
 	 * @param Request $request the request to authenticate
-	 * @return mixed <code>false</code> on failure, otherwise the User object
+	 * @return mixed <code>false</code> on failure, otherwise the Role object
 	 */
 	public function authenticate(Request $request);
 }
@@ -129,29 +116,6 @@ class AnomeySecurityModule extends Module implements AnomeySecurityProvider {
 				$this->providers[] = new $class;
 			}
 		}
-	}
-
-	public function getRoles() {
-		$roles = new Vector();
-		foreach($this->providers as $provider) {
-			$roles->merge($provider->getRoles());
-		}
-		return $roles;
-	}
-
-	/**
-	 * Returns a role.
-	 *
-	 * @param string $id
-	 * @return Role
-	 */
-	public function getRole($id) {
-		foreach($this->getRoles() as $role) {
-			if($role->getId() == $id) {
-				return $role;
-			}
-		}
-		return null;
 	}
 
 	public function getResources() {
