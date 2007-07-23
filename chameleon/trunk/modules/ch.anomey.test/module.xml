@@ -6,4 +6,7 @@
 		<module version="0.1">ch.anomey.view.example</module>
 	</require>
 	<class>AnomeyTestModule</class>
+	<extension xmlns="http://anomey.ch/controller/actions">
+		<action pattern="^product/(\d+)$">SomeActionClass</action>
+	</extension>
 </module>

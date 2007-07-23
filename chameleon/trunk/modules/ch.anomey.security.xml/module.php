@@ -1,43 +1,81 @@
 <?php
 
-class XMLRole implements Role {
+class XMLUser implements User {
 
 	/**
-	 * The id of the role. A unique string.
+	 * The id of the user. A unique string.
 	 *
 	 * @var mixed
 	 */
 	private $id;
 
 	/**
-	 * Describing name of the role. 
+	 * The user's nick name. 
+	 *
+	 * @var string
+	 */
+	private $nick;
+	
+	/**
+	 * @var Vector
+	 */
+	private $groups;
+	
+	public function __construct($id, $nick) {
+		$this->id = $id;
+		$this->nick = $nick;
+		$this->groups = new Vector();
+	}
+
+	public function getId() {
+		return 'xml/' . $this->id;
+	}
+
+	public function getNick() {
+		return $this->nick;
+	}
+
+	public function setNick($nick) {
+		$this->nick = $nick;
+	}
+	
+	public function getGroups() {
+		return $this->groups;
+	}
+	
+	public function addGroup(XMLGroup $group) {
+		if(!$this->groups->contains($group)) {
+			$this->groups->append($group);
+			$group->addUser($this);
+		}
+	}
+}
+
+class XMLGroup implements Group {
+
+	/**
+	 * The id of the group. A unique string.
+	 *
+	 * @var mixed
+	 */
+	private $id;
+
+	/**
+	 * The name of the group. 
 	 *
 	 * @var string
 	 */
 	private $name;
 	
 	/**
-	 * The parent role to inherit from. <code>null</code> if
-	 * there is no parent.
-	 *
-	 * @var XMLRole
-	 */
-	private $parent;
-	
-	/**
 	 * @var Vector
 	 */
-	private $childs;
+	private $users;
 	
-	public function __construct($id, $name, $parent = null) {
+	public function __construct($id, $name) {
 		$this->id = $id;
 		$this->name = $name;
-		$this->parent = $parent;
-		$this->childs = new Vector();
-		
-		if($parent != null) {
-			$parent->addChild($this);
-		}
+		$this->users = new Vector();
 	}
 
 	public function getId() {
@@ -52,13 +90,14 @@ class XMLRole implements Role {
 		$this->name = $name;
 	}
 	
-	public function getParent() {
-		return $this->parent;
+	public function getUsers() {
+		return $this->users;
 	}
 	
-	public function addChild(XMLRole $role) {
-		if(!$this->childs->contains($role)) {
-			$this->childs->append($role);
+	public function addGroup(XMLUser $user) {
+		if(!$this->users->contains($user)) {
+			$this->users->append($user);
+			$user->addGroup($this);
 		}
 	}
 }
@@ -67,7 +106,17 @@ class XMLRole implements Role {
  * Implementation of the security provider interface with XML files.
  * Users and groups get stored in XML files.
  */
-class AnomeyXMLSecurityProvider implements AnomeySecurityProvider  {
+class XMLSecurityProvider implements SecurityProvider  {
+
+	/**
+	 * @var Vector
+	 */
+	private $users;
+
+	/**
+	 * @var Vector
+	 */
+	private $groups;
 
 	/**
 	 * @var Vector
@@ -88,31 +137,42 @@ class AnomeyXMLSecurityProvider implements AnomeySecurityProvider  {
 	}
 
 	public function __construct() {
-		$this->roles = new Vector();
+		$this->users = new Vector();
 		try {
-			$rolesxml = XML::load('xml/ch.anomey.security.xml/roles.xml');
-			$this->parseRole($rolesxml);
+			$usersXml = XML::load('xml/ch.anomey.security.xml/users.xml');
+			foreach($usersXml->user as $userXml) {
+				$user = new XMLUser((string) $userXml['id'], (string) $userXml['nick']);
+				$this->users->set($user->getId(), $user);
+			}
 		} catch(FileNotFoundException $e) {
 		}
 
-		$this->resources = new Vector();
+		$this->groups = new Vector();
 		try {
-			$resourcesXml = XML::load('xml/ch.anomey.security.xml/resources.xml');
-			foreach($resourcesXml->resource as $resourceXml) {
-				$resource = new Resource();
-				$resource->setName((string) $resourceXml['name']);
-				$this->resources->append($resource);
-			}			
+			$groupsXml = XML::load('xml/ch.anomey.security.xml/groups.xml');
+			foreach($groupsXml->group as $groupXml) {
+				$group = new XMLGroup((string) $groupXml['id'], (string) $groupXml['name']);
+
+				// load users into group
+				foreach($groupXml->user as $userXml) {
+					if($this->users->exists((string) $userXml['id'])) {
+						$user = $this->users->get((string) $userXml['id']);
+						$group->addUser($user);
+					}
+				}
+
+				$this->groups->set($group->getId(), $group);
+			}
 		} catch(FileNotFoundException $e) {
 		}
 	}
 
-	public function getRoles() {
-		return $this->roles->getValues();
+	public function getUsers() {
+		return $this->users->getValues();
 	}
-	
-	public function getResources() {
-		return $this->resources->getValues();
+
+	public function getGroups() {
+		return $this->groups->getValues();
 	}
 
 	/**
@@ -127,7 +187,7 @@ class AnomeyXMLSecurityProvider implements AnomeySecurityProvider  {
 	}
 }
 
-class AnomeySecurityXMLModule extends Module {
+class SecurityXMLModule extends Module {
 	public function invoke() {
 
 	}

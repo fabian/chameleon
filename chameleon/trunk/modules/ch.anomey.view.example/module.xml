@@ -7,4 +7,7 @@
 	<extension xmlns="http://anomey.ch/view">
 		<view id="ch.anomey.view.example">views/example.view.php</view>
 	</extension>
+	<extension xmlns="http://anomey.ch/security/resources">
+		<resource id="ch.anomey.view.example">example view</resource>
+	</extension>
 </module>
