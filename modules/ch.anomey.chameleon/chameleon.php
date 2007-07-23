@@ -281,7 +281,7 @@ class XMLExtensionPointElement implements ExtensionPointElement {
 		foreach ($xml->children() as $child) {
 			$this->children[] = new self($child);
 		}
-		$this->value = trim($xml);
+		$this->value = trim((string) $xml);
 		$this->attributes = new Vector();
 		foreach ($xml->attributes() as $key => $value) {
 			$this->attributes[$key] = (string) $value;
@@ -298,7 +298,7 @@ class XMLExtensionPointElement implements ExtensionPointElement {
 
 	public function getChildrenByName($name) {
 		$children = new Vector();
-		foreach ($this->xmlElement-> $name as $child) {
+		foreach ($this->xmlElement->$name as $child) {
 			$children = new self($child);
 		}
 		return $children;

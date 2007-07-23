@@ -4,10 +4,15 @@
 	<require>
 		<module version="0.1">ch.anomey.util</module>
 	</require>
-	<class>AnomeySecurityModule</class>
+	<class>SecurityModule</class>
 	<extensionPoint>
 		<namespace>http://anomey.ch/security/provider</namespace>
 		<description>security providers</description>
-		<class>AnomeySecurityProviderExtension</class>
+		<class>SecurityProviderExtension</class>
+	</extensionPoint>
+	<extensionPoint>
+		<namespace>http://anomey.ch/security/resources</namespace>
+		<description>security resources</description>
+		<class>ResourcesExtension</class>
 	</extensionPoint>
 </module>

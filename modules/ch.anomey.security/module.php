@@ -10,29 +10,21 @@ interface User {
 	public function getId();
 
 	/**
-	 * Returns the user's nick name. 
+	 * Returns the user's nick name.
 	 *
 	 * @return string
 	 */
 	public function getNick();
 	
 	/**
-	 * Returns the roles the user is assigned to.
+	 * Returns the groups the user is assigned to.
 	 * 
 	 * @return Vector
 	 */
-	public function getRoles();
-	
-	/**
-	 * Returns <code>true</code> if the user is assigned in any 
-	 * way to the passed role and otherwise <code>false</code>.
-	 * 
-	 * @return boolean
-	 */
-	public function hasRole(Role $role);
+	public function getGroups();
 }
 
-interface Role {
+interface Group {
 
 	/**
 	 * Returns the id of the role. A unique string.
@@ -42,46 +34,31 @@ interface Role {
 	public function getId();
 
 	/**
-	 * Returns a describing name of the role. 
+	 * Returns a describing name of the group. 
 	 *
 	 * @return string
 	 */
 	public function getName();
-	
-	/**
-	 * Returns the parent of the role to inherit from 
-	 * or <code>null</code> if there is no parent role.
-	 *
-	 * @var Role
-	 */
-	public function getParent();
-	
-	/**
-	 * Returns <code>true</code> if the role inherits from the  
-	 * passed role in any way and otherwise <code>false</code>.
-	 * 
-	 * @return boolean
-	 */
-	public function hasRole(Role $role);
-}
-
-class Resource {
-
-	private $name;
-
-	public function getName() {
-		return $this->name;
-	}
-
-	public function setName($name) {
-		$this->name = $name;
-	}
 }
 
 /**
  * Interface for security providers.
  */
-interface AnomeySecurityProvider {
+interface SecurityProvider {
+	
+	/**
+	 * Returns users.
+	 *
+	 * @return Vector
+	 */
+	public function getUsers();
+	
+	/**
+	 * Returns groups.
+	 *
+	 * @return Vector
+	 */
+	public function getGroups();
 
 	/**
 	 * Tries to authenticate the user with the passed request.
@@ -92,7 +69,27 @@ interface AnomeySecurityProvider {
 	public function authenticate(Request $request);
 }
 
-class AnomeySecurityModule extends Module implements AnomeySecurityProvider {
+class Resource {
+	
+	private $id;
+	
+	private $name;
+	
+	public function __construct($id, $name) {
+		$this->id = $id;
+		$this->name = $name;
+	}
+	
+	public function getId() {
+		return $this->id;
+	}
+	
+	public function getName() {
+		return $this->name;
+	}
+}
+
+class SecurityModule extends Module implements SecurityProvider {
 
 	/**
 	 * @var Log
@@ -103,10 +100,16 @@ class AnomeySecurityModule extends Module implements AnomeySecurityProvider {
 	 * @var Vector
 	 */
 	private $providers;
-
+	
+	/**
+	 * @var Vector
+	 */
+	private $resources;
+	
 	public function invoke() {
 		$this->log = new Log($this->getId(), $this->getLogLevel());
 		$this->providers = new Vector();
+		$this->resources = new Vector();
 
 		if(!$this->getExtensions('http://anomey.ch/security/provider')->count() > 0) {
 			$this->log->error('No security provider implementation found!');
@@ -116,14 +119,56 @@ class AnomeySecurityModule extends Module implements AnomeySecurityProvider {
 				$this->providers[] = new $class;
 			}
 		}
+
+		foreach($this->getExtensions('http://anomey.ch/security/resources') as $extension) {
+			$resources = $extension->getResources();
+			$this->resources->merge($resources);
+		}
+	}
+	
+	/**
+	 * Returns all users.
+	 *
+	 * @return Vector
+	 */
+	public function getUsers() {
+		$users = new Vector();
+		foreach($this->providers as $provider) {
+			$users->merge($provider->getUsers());
+		}
+		return $users;
+	}
+
+	/**
+	 * Returns a user.
+	 *
+	 * @param string $id ID of the user.
+	 * @return User
+	 */
+	public function getUser($id) {
+		foreach($this->getUsers() as $user) {
+			if($user->getId() == $id) {
+				return $user;
+			}
+		}
+		return null;
+	}
+	
+	/**
+	 * Returns all users.
+	 *
+	 * @return Vector
+	 */
+	public function getGroups() {
+		$groups = new Vector();
+		foreach($this->providers as $provider) {
+			$groups->merge($provider->getGroups());
+		}
+		return $groups;
 	}
 
 	public function getResources() {
-		$resources = new Vector();
-		foreach($this->providers as $provider) {
-			$resources->merge($provider->getResources());
-		}
-		return $resources;
+		return $this->resources;
 	}
 
 	public function authenticate(Request $request) {
@@ -137,7 +182,26 @@ class AnomeySecurityModule extends Module implements AnomeySecurityProvider {
 	}
 }
 
-class AnomeySecurityProviderExtension extends Extension {
+class ResourcesExtension extends Extension {
+
+	/**
+	 * @var Vector
+	 */
+	private $resources;
+
+	public function getResources() {
+		return $this->resources;
+	}
+
+	public function load(ExtensionPointElement $element) {
+		$this->resources = new Vector();
+		foreach($element->getChildren() as $resource) {
+			$this->resources->append(new Resource($resource->getAttribute('id'), $resource->getValue()));
+		}
+	}
+}
+
+class SecurityProviderExtension extends Extension {
 
 	/**
 	 * @var string
@@ -149,7 +213,7 @@ class AnomeySecurityProviderExtension extends Extension {
 	}
 
 	public function load(ExtensionPointElement $element) {
-		$this->provider = trim($element->getChildrenByName('provider')->getValue());
+		$this->provider = $element->getChildrenByName('provider')->getValue();
 	}
 }
 

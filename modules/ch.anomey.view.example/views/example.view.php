@@ -1,12 +1,16 @@
 <?php
 
-echo '<br/>Roles: ';
-foreach($this->getModule('ch.anomey.security')->getRoles() as $role) {
-	echo $role->getName() . ', ';
+echo '<br/>Users: ';
+foreach($this->getModule('ch.anomey.security')->getUsers() as $user) {
+	printf('%s, ', $user->getNick());
 }
-echo '<br/>Rersources: ';
+echo '<br/>Groups: ';
+foreach($this->getModule('ch.anomey.security')->getGroups() as $group) {
+	printf('%s, ', $group->getName());
+}
+echo '<br/>Ressources: ';
 foreach($this->getModule('ch.anomey.security')->getResources() as $resource) {
-	echo $resource->getName() . ', ';
+	printf('%s (%s), ', $resource->getId(), $resource->getName());
 }
 
 ?>

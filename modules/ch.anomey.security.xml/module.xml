@@ -4,8 +4,8 @@
 	<require>
 		<module version="0.1">ch.anomey.security</module>
 	</require>
-	<class>AnomeySecurityXMLModule</class>
+	<class>SecurityXMLModule</class>
 	<extension xmlns="http://anomey.ch/security/provider">
-		<provider>AnomeyXMLSecurityProvider</provider>
+		<provider>XMLSecurityProvider</provider>
 	</extension>
 </module>
