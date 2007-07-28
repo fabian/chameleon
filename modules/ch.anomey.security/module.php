@@ -196,7 +196,7 @@ class ResourcesExtension extends Extension {
 	public function load(ExtensionPointElement $element) {
 		$this->resources = new Vector();
 		foreach($element->getChildren() as $resource) {
-			$this->resources->append(new Resource($resource->getAttribute('id'), $resource->getValue()));
+			$this->resources->append(new Resource($resource->getAttribute('id'), $resource->getAttribute('name')));
 		}
 	}
 }

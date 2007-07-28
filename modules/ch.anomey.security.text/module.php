@@ -1,13 +1,6 @@
 <?php
 
-class XMLUser implements User {
-
-	/**
-	 * The id of the user. A unique string.
-	 *
-	 * @var mixed
-	 */
-	private $id;
+class TextUser implements User {
 
 	/**
 	 * The user's nick name. 
@@ -21,29 +14,24 @@ class XMLUser implements User {
 	 */
 	private $groups;
 	
-	public function __construct($id, $nick) {
-		$this->id = $id;
+	public function __construct($nick) {
 		$this->nick = $nick;
 		$this->groups = new Vector();
 	}
 
 	public function getId() {
-		return 'xml/' . $this->id;
+		return 'text/' . $this->nick;
 	}
 
 	public function getNick() {
 		return $this->nick;
-	}
-
-	public function setNick($nick) {
-		$this->nick = $nick;
 	}
 	
 	public function getGroups() {
 		return $this->groups;
 	}
 	
-	public function addGroup(XMLGroup $group) {
+	public function addGroup(TextGroup $group) {
 		if(!$this->groups->contains($group)) {
 			$this->groups->append($group);
 			$group->addUser($this);
@@ -51,14 +39,7 @@ class XMLUser implements User {
 	}
 }
 
-class XMLGroup implements Group {
-
-	/**
-	 * The id of the group. A unique string.
-	 *
-	 * @var mixed
-	 */
-	private $id;
+class TextGroup implements Group {
 
 	/**
 	 * The name of the group. 
@@ -72,29 +53,24 @@ class XMLGroup implements Group {
 	 */
 	private $users;
 	
-	public function __construct($id, $name) {
-		$this->id = $id;
+	public function __construct($name) {
 		$this->name = $name;
 		$this->users = new Vector();
 	}
 
 	public function getId() {
-		return 'xml/' . $this->id;
+		return 'text/' . $this->name;
 	}
 
 	public function getName() {
 		return $this->name;
-	}
-
-	public function setName($name) {
-		$this->name = $name;
 	}
 	
 	public function getUsers() {
 		return $this->users;
 	}
 	
-	public function addGroup(XMLUser $user) {
+	public function addGroup(TextUser $user) {
 		if(!$this->users->contains($user)) {
 			$this->users->append($user);
 			$user->addGroup($this);
@@ -104,9 +80,9 @@ class XMLGroup implements Group {
 
 /**
  * Implementation of the security provider interface with XML files.
- * Users and groups get stored in XML files.
+ * Users and groups get stored in simple text files.
  */
-class XMLSecurityProvider implements SecurityProvider  {
+class TextSecurityProvider implements SecurityProvider  {
 
 	/**
 	 * @var Vector
@@ -117,35 +93,36 @@ class XMLSecurityProvider implements SecurityProvider  {
 	 * @var Vector
 	 */
 	private $groups;
-
+	
 	public function __construct() {
+		
 		$this->users = new Vector();
-		try {
-			$usersXml = XML::load('data/ch.anomey.security.xml/users.xml');
-			foreach($usersXml->user as $userXml) {
-				$user = new XMLUser((string) $userXml['id'], (string) $userXml['nick']);
+		if(is_readable('data/ch.anomey.security.text/users.properties')) {
+			$users = parse_ini_file('data/ch.anomey.security.text/users.properties', true);
+			foreach($users as $username => $password) {
+				$user = new TextUser($username);
 				$this->users->set($user->getId(), $user);
 			}
-		} catch(FileNotFoundException $e) {
 		}
 
 		$this->groups = new Vector();
-		try {
-			$groupsXml = XML::load('data/ch.anomey.security.xml/groups.xml');
-			foreach($groupsXml->group as $groupXml) {
-				$group = new XMLGroup((string) $groupXml['id'], (string) $groupXml['name']);
-
+		if(is_readable('data/ch.anomey.security.text/groups.properties')) {
+			$users = parse_ini_file('data/ch.anomey.security.text/groups.properties', true);
+			foreach($users as $groupname => $users) {
+				$group = new TextGroup($groupname);
+				
 				// load users into group
-				foreach($groupXml->user as $userXml) {
-					if($this->users->exists((string) $userXml['id'])) {
-						$user = $this->users->get((string) $userXml['id']);
+				foreach(explode(',', $users) as $username) {
+					$username = trim($username);
+					
+					if($this->users->exists($username)) {
+						$user = $this->users->get($username);
 						$group->addUser($user);
 					}
 				}
-
-				$this->groups->set($group->getId(), $group);
+				
+				$this->groups->set($group->getName(), $group);
 			}
-		} catch(FileNotFoundException $e) {
 		}
 	}
 
@@ -169,7 +146,7 @@ class XMLSecurityProvider implements SecurityProvider  {
 	}
 }
 
-class SecurityXMLModule extends Module {
+class SecurityTextModule extends Module {
 	public function invoke() {
 
 	}
