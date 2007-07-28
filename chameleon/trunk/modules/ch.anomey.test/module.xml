@@ -6,7 +6,15 @@
 		<module version="0.1">ch.anomey.view.example</module>
 	</require>
 	<class>AnomeyTestModule</class>
+	<extension xmlns="http://anomey.ch/security/resources">
+		<resource id="ch.anomey.test.example" parent="ch.anomey.foo" name="example resource">
+			<permission>view</permission>
+			<permission>edit</permission>
+		</resource>
+	</extension>
 	<extension xmlns="http://anomey.ch/controller/actions">
-		<action pattern="^product/(\d+)$">SomeActionClass</action>
+		<action pattern="^product/(\d+)$" class="SomeActionClass">
+			<constraint permission="view" resource="ch.anomey.test.example" />
+		</action>
 	</extension>
 </module>

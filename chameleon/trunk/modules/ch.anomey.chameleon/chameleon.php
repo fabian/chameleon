@@ -391,7 +391,7 @@ class Chameleon {
 		$this->bundles = new Vector();
 
 		// parse disabled modules
-		$xml = simplexml_load_file('xml/ch.anomey.chameleon/configuration.xml');
+		$xml = simplexml_load_file('data/ch.anomey.chameleon/configuration.xml');
 		foreach ($xml->disable->bundle as $bundle) {
 			$this->disabledBundles->append(trim($bundle));
 		}
