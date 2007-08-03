@@ -56,63 +56,6 @@ class ExtensionRegistry {
 	}
 }
 
-class Bundle {
-
-	/**
-	 * @var Chameleon
-	 */
-	private $chameleon;
-
-	private $id;
-
-	private $name;
-
-	private $description = '';
-
-	private $update;
-
-	/**
-	 * @var Vector
-	 */
-	private $modules;
-
-	public function __construct(Chameleon $chameleon, $id, $name, $update = '') {
-		$this->chameleon = $chameleon;
-		$this->id = $id;
-		$this->name = $name;
-		$this->update = '';
-		$this->modules = new Vector();
-	}
-
-	public function getId() {
-		return $this->id;
-	}
-
-	public function getName() {
-		return $this->name;
-	}
-
-	public function getDescription() {
-		return $this->description;
-	}
-
-	public function setDescription($description) {
-		$this->description = $description;
-	}
-
-	public function getUpdate() {
-		return $this->update;
-	}
-
-	public function getModules() {
-		return $this->modules;
-	}
-
-	public function addModule(Module $module) {
-		$this->modules->append($module);
-	}
-}
-
 /**
  * The module class which can be overloaded by the modules.
  * It makes the extension point registry avaible to the modules
@@ -321,9 +264,6 @@ class XMLExtensionPointElement implements ExtensionPointElement {
 	}
 }
 
-class BundleNotFoundException extends Exception {
-}
-
 class ModuleNotFoundException extends Exception {
 }
 
@@ -339,21 +279,12 @@ class Chameleon {
 	const MODULE_XML = 'module.xml';
 	const MODULE_PHP = 'module.php';
 
-	const BUNDLE_XML = 'bundle.xml';
-
 	private $modulesPath;
-
-	private $bundlesPath;
 
 	/**
 	 * @var ExtensionRegistry
 	 */
 	private $extensionRegistry;
-
-	/**
-	 * @var Vector
-	 */
-	private $disabledBundles;
 
 	/**
 	 * @var Vector
@@ -373,43 +304,22 @@ class Chameleon {
 	 * @var Vector
 	 */
 	private $modules;
-
-	/**
-	 * Cache with all loaded bundles.
-	 *
-	 * @var Vector
-	 */
-	private $bundles;
-
-	public function __construct($modulesPath = 'modules', $bundlesPath = 'bundles') {
+	
+	public function __construct($modulesPath = 'modules') {
 		$this->modulesPath = $modulesPath;
-		$this->bundlesPath = $bundlesPath;
 		$this->extensionRegistry = new ExtensionRegistry();
-		$this->disabledBundles = new Vector();
 		$this->disabledModules = new Vector();
 		$this->modules = new Vector();
-		$this->bundles = new Vector();
 
 		// parse disabled modules
 		$xml = simplexml_load_file('data/ch.anomey.chameleon/configuration.xml');
-		foreach ($xml->disable->bundle as $bundle) {
-			$this->disabledBundles->append(trim($bundle));
+		foreach ($xml->disable->module as $module) {
+			$this->disabledModules->append(trim($module));
 		}
-
+		
 		$this->logLevel = (int) $xml->log->level;
 		$this->log = new Log('ch.anomey.chameleon', $this->getLogLevel());
-
-		// load bundles
-		foreach (scandir($this->bundlesPath) as $bundle) {
-			if ($this->isBundle($bundle)) {
-				try {
-					$this->loadBundle($bundle);
-				} catch (ModuleMissingException $e) {
-					$this->log->warn($e->getMessage());
-				}
-			}
-		}
-
+		
 		// load modules in path
 		foreach (scandir($this->modulesPath) as $module) {
 			if ($this->isModule($module)) {
@@ -446,79 +356,6 @@ class Chameleon {
 			try {
 				$this->getModule($module)->invoke();
 			} catch (ModuleNotFoundException $e) {
-			}
-		}
-	}
-
-	/**
-	 * Check if the bundles path contains the passed bundle. Returns
-	 * the path to the bundle folder if it is a bundle or otherwise
-	 * <code>false</code>.
-	 *
-	 * @param string $bundle id of the bundle
-	 * @return mixed
-	 */
-	private function isBundle($bundle) {
-		$file = $this->bundlesPath . '/' . $bundle . '/' . self::BUNDLE_XML;
-		if (file_exists($file)) {
-			return $this->bundlesPath . '/' . $bundle;
-		} else {
-			return false;
-		}
-	}
-
-	/**
-	 * Loads a bundle specified by the passed id.
-	 *
-	 * @param string $id id of the bundle to load
-	 * @return Bundle bundle with the passed id
-	 */
-	private function loadBundle($id) {
-		if (!isset ($this->bundles[$id])) { // only load bundle if not already loaded
-			if ($bundleFolder = $this->isBundle($id)) {
-				if ($this->disabledBundles->contains($id)) { // only load bundle which are not disabled
-					$this->log->trail('Disable modules of disabled bundle \'' . $id . '\'.');
-
-					// parse bundle xml file
-					$xml = simplexml_load_file($bundleFolder . '/' . self::BUNDLE_XML);
-
-					// read modules
-					foreach ($xml->module as $module) {
-						$this->disabledModules->append(trim($module));
-						$this->log->trail('Disabled module \'' . trim($module) . '\'.');
-					}
-
-					$this->log->trail('Disabled modules of disabled bundle \'' . $id . '\'.');
-				} else {
-					$this->log->trail('Loading bundle \'' . $id . '\'.');
-
-					// parse bundle xml file
-					$xml = simplexml_load_file($bundleFolder . '/' . self::BUNDLE_XML);
-
-					$name = trim($xml->name);
-					$description = trim($xml->description);
-					$update = trim($xml->update);
-
-					// create module
-					$bundle = new Bundle($this, $id, $name, $update);
-					$bundle->setDescription($description);
-					$this->bundles[$id] = $bundle;
-
-					// read modules
-					foreach ($xml->module as $module) {
-						try {
-							$bundle->addModule($this->getModule(trim($module)));
-						} catch(ModuleNotFoundException $e) {
-							$this->log->warn($e->getMessage());
-						}
-					}
-
-					$this->log->trail('Loaded bundle \'' . $id . '\'.');
-
-					return $bundle;
-				}
-			} else {
-				throw new BundleNotFoundException('Bundle \'' . $id . '\' not found!');
 			}
 		}
 	}

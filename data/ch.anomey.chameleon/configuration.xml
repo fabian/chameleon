@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <configuration>
 	<disable>
-		<bundle>net.tales.duck</bundle>
+		<module>net.tales.duckling.ugly</module>
 	</disable>
 	<log>
 		<level>1</level>

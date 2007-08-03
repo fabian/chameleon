@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<bundle id="ch.anomey.security">
-	<name>anomey security framework</name>
-	<description>
-		Security interface to define users, groups and ressources and
-		give the users permission to the resources.
-	</description>
-	<module>ch.anomey.security</module>
-</bundle>
