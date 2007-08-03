@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<bundle id="ch.anomey.security">
-	<name>anomey xml security implementation</name>
-	<description>
-		This security implementation stores it credentials inside XML
-		files.
-	</description>
-	<module>ch.anomey.security.xml</module>
-</bundle>
