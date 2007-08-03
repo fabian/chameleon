@@ -28,9 +28,9 @@ if (isset( $_SERVER ) && array_key_exists( 'REQUEST_METHOD', $_SERVER ) ) {
 			usleep(250000);
 			echo ".";
 		}
-		echo " Finished!";
+		echo " Finished!\n";
 	} else {
-		echo "Aborted!";
+		echo "Aborted!\n";
 	}
 }
 
