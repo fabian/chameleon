@@ -73,14 +73,21 @@ class Module {
 	private $chameleon;
 
 	private $id;
+	
+	private $version;
 
-	public function __construct(Chameleon $chameleon, $id) {
+	public function __construct(Chameleon $chameleon, $id, $version) {
 		$this->chameleon = $chameleon;
 		$this->id = $id;
+		$this->version = $version;
 	}
 
 	public function getId() {
 		return $this->id;
+	}
+	
+	public function getVersion() {
+		return $this->version;
 	}
 
 	public function getLogLevel() {
@@ -305,11 +312,17 @@ class Chameleon {
 	 */
 	private $modules;
 	
+	/**
+	 * @var Vector
+	 */
+	private $folders; 
+	
 	public function __construct($modulesPath = 'modules') {
 		$this->modulesPath = $modulesPath;
 		$this->extensionRegistry = new ExtensionRegistry();
 		$this->disabledModules = new Vector();
 		$this->modules = new Vector();
+		$this->folders = new Vector();
 
 		// parse disabled modules
 		$xml = simplexml_load_file('data/ch.anomey.chameleon/configuration.xml');
@@ -320,15 +333,33 @@ class Chameleon {
 		$this->logLevel = (int) $xml->log->level;
 		$this->log = new Log('ch.anomey.chameleon', $this->getLogLevel());
 		
-		// load modules in path
+		// load module folder in path
 		foreach (scandir($this->modulesPath) as $module) {
-			if ($this->isModule($module)) {
-				try {
-					$this->loadModule($module);
-				} catch (ModuleMissingException $e) {
-					$this->log->warn($e->getMessage());
+			$path = $this->modulesPath . '/' . $module;
+			if ($this->isModule($path)) {
+				$this->log->trail('Loading module folder \'' . $module . '\'.');
+
+				// parse module xml file
+				$xml = simplexml_load_file($path . '/' . self::MODULE_XML);
+				
+				$id = (string) $xml['id'];
+				$version = (string) $xml['version'];
+				
+				if($version !== '') {
+					if(!$this->folders->exists($id)) {
+						$this->folders[$id] = new Vector();
+					}
+					$this->folders[$id][$version] = $path;
+	
+					$this->log->trail(sprintf('Loaded module folder \'%s\'.', $module));
+				} else {
+					$this->log->warn(sprintf('Could no load module folder \'%s\' because module has no version.', $module));
 				}
 			}
+		}
+		
+		foreach($this->folders as $id => $versions) {			
+			$this->loadModule($id);
 		}
 	}
 
@@ -370,44 +401,50 @@ class Chameleon {
 		if ($this->modules->exists($id)) {
 			return $this->modules[$id];
 		} else {
-			return $this->loadModule($id);
+			throw new ModuleNotFoundException(sprintf('Module \'%s\' not found!', $id));
 		}
 	}
 
 	/**
-	 * Check if the modules path contains the passed module. Returns
-	 * the path to the module folder if it is a module or otherwise
+	 * Check if the passsed path is a module. Returns
+	 * <code>true</code> if it is a module or otherwise
 	 * <code>false</code>.
 	 *
-	 * @param string $module name of the folder
-	 * @return mixed
+	 * @param string $path name of the folder
+	 * @return boolean
 	 */
-	private function isModule($module) {
-		$file = $this->modulesPath . '/' . $module . '/' . self::MODULE_XML;
-		if (file_exists($file)) {
-			return $this->modulesPath . '/' . $module;
-		} else {
-			return false;
-		}
+	private function isModule($path) {
+		return file_exists($path . '/' . self::MODULE_XML);
 	}
 
 	/**
-	 * Loads a module specified by the passed name.
+	 * Loads a module specified by the passed id.
 	 *
 	 * @param string $id id of the module to load
-	 * @return Module module with the passed id
 	 */
 	private function loadModule($id) {
-		if (!$this->disabledModules->contains($id)) { // only load modules which are not disabled
-			if (!isset ($this->modules[$id])) { // only load module if not already loaded
-
-				if ($moduleFolder = $this->isModule($id)) {
-
-					$this->log->trail('Loading module \'' . $id . '\'.');
-
+		if(!isset($this->modules[$id])) { // only load module if not already loaded
+			if(!$this->disabledModules->contains($id)) {
+				if($this->folders->exists($id)) {
+					$this->log->trail(sprintf('Loading module \'%s\'.', $id));
+					
+					$previous = 0;
+					$latest = '';
+					
+					foreach($this->folders[$id] as $version => $path) {
+						if(version_compare($previous, $version, '<') or $latest == '') {
+							$latest = $path;
+						}
+						$previous = $version;
+					}
+					
+					$moduleFolder = $latest;
+					
 					// parse module xml file
 					$xml = simplexml_load_file($moduleFolder . '/' . self::MODULE_XML);
 
+					$version = (string) $xml['version'];
+					
 					if($xml->require->module != null) {
 						foreach ($xml->require->module as $requiredModule) {
 							try {
@@ -417,49 +454,49 @@ class Chameleon {
 							}
 						}
 					}
-
+			
 					// include module.php of module
 					if (file_exists($moduleFolder . '/' . self::MODULE_PHP)) {
 						include_once $moduleFolder . '/' . self::MODULE_PHP;
 					}
-
+					
 					$moduleClass = trim($xml->class);
-
-					// if no module class is defined, us default class
+					
+					// if no module class is defined, use default class
 					if ($moduleClass == '') {
 						$moduleClass = 'Module';
 					}
-
+					
 					// create module
-					$module = new $moduleClass ($this, $id);
+					$module = new $moduleClass($this, $id, $version);
 					$this->modules[$id] = $module;
-
+			
 					// read extension points
 					foreach ($xml->extensionPoint as $ep) {
 						$extensionClass = trim($ep->class);
 						$namespace = trim($ep->namespace);
-
+			
 						// add extension point to registry
 						$this->extensionRegistry->addExtensionPoint(new ExtensionPoint($namespace, $extensionClass));
 					}
-
+			
 					// loop all extension points
 					foreach ($this->extensionRegistry->getExtensionPoints() as $extensionPoint) {
 						$xml->registerXPathNamespace('t', $extensionPoint->getNamespace());
-
+			
 						// parse extensions of current extension point
 						foreach ($xml->xpath('//t:extension') as $e) {
 							// add extension to extension point
 							$extensionPoint->createExtension(new XMLExtensionPointElement($e), $module);
 						}
 					}
-
-					$this->log->trail('Loaded module \'' . $id . '\'.');
-
-					return $module;
+	
+					$this->log->trail(sprintf('Loaded module \'%s\' version \'%s\'.', $module->getId(), $module->getVersion()));
 				} else {
-					throw new ModuleNotFoundException('Module \'' . $id . '\' not found!');
+					$this->log->error(sprintf('Could not load module \'%s\' because no folder contains the module.', $id));
 				}
+			} else {
+				$this->log->trail(sprintf('Module \'%s\' hasn\'t been loaded as it\'s disabled.', $id));
 			}
 		}
 	}
