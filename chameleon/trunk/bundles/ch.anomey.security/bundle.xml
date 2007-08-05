@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bundle xmlns="http://anomey.ch/core/bundle" id="ch.anomey.security"
+	version="0.1">
+	<require>
+		<bundle version="0.1">ch.anomey.util</bundle>
+	</require>
+	<class>SecurityBundle</class>
+	<extensionPoint>
+		<namespace>http://anomey.ch/security/provider</namespace>
+		<description>security providers</description>
+		<class>SecurityProviderExtension</class>
+	</extensionPoint>
+	<extensionPoint>
+		<namespace>http://anomey.ch/security/resources</namespace>
+		<description>security resources</description>
+		<class>ResourcesExtension</class>
+	</extensionPoint>
+</bundle>
