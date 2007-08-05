@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bundle xmlns="http://anomey.ch/core/bundle" id="ch.anomey.test"
+	version="0.1">
+	<require>
+		<bundle version="0.1">ch.anomey.security</bundle>
+		<bundle version="0.1">ch.anomey.view.example</bundle>
+	</require>
+	<class>AnomeyTestBundle</class>
+	<extension xmlns="http://anomey.ch/security/resources">
+		<resource id="ch.anomey.test.example" parent="ch.anomey.foo" name="example resource">
+			<permission>view</permission>
+			<permission>edit</permission>
+		</resource>
+	</extension>
+	<extension xmlns="http://anomey.ch/controller/actions">
+		<action pattern="^product/(\d+)$" class="SomeActionClass">
+			<constraint permission="view" resource="ch.anomey.test.example" />
+		</action>
+	</extension>
+</bundle>
