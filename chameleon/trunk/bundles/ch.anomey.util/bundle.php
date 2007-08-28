@@ -307,10 +307,6 @@ class Request extends Bean {
 		return $this->parameters;
 	}
 
-	public function getParameter($name, $default = '') {
-		return Value :: get($this->parameters[$name], $default);
-	}
-
 	public function addParameters($parameters) {
 		$this->parameters->merge($parameters);
 	}

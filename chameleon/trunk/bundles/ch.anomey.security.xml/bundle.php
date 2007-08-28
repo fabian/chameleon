@@ -15,15 +15,23 @@ class XMLUser implements User {
 	 * @var string
 	 */
 	private $nick;
+
+	/**
+	 * The user's password. 
+	 *
+	 * @var string
+	 */
+	private $password;
 	
 	/**
 	 * @var Vector
 	 */
 	private $groups;
 	
-	public function __construct($id, $nick) {
+	public function __construct($id, $nick, $password) {
 		$this->id = $id;
 		$this->nick = $nick;
+		$this->password = $password;
 		$this->groups = new Vector();
 	}
 
@@ -37,6 +45,14 @@ class XMLUser implements User {
 
 	public function setNick($nick) {
 		$this->nick = $nick;
+	}
+	
+	public function getPassword() {
+		return $this->password;
+	}
+	
+	public function setPassword($password) {
+		$this->password = $password;
 	}
 	
 	public function getGroups() {
@@ -123,7 +139,7 @@ class XMLSecurityProvider implements SecurityProvider  {
 		try {
 			$usersXml = XML::load('data/ch.anomey.security.xml/users.xml');
 			foreach($usersXml->user as $userXml) {
-				$user = new XMLUser((string) $userXml['id'], (string) $userXml['nick']);
+				$user = new XMLUser((string) $userXml['id'], (string) $userXml['nick'], (string) $userXml['password']); // TODO encrypted password with SHA1 and salt
 				$this->users->set($user->getId(), $user);
 			}
 		} catch(FileNotFoundException $e) {
@@ -158,14 +174,25 @@ class XMLSecurityProvider implements SecurityProvider  {
 	}
 
 	/**
-	 * Tries to authenticate the role with the parameters
+	 * Tries to authenticate the user with the parameters
 	 * username and password.
 	 *
 	 * @param Request $request the request to authenticate
-	 * @return mixed <code>false</code> on failure, otherwise the role object
+	 * @return User the authenticated user object
+	 * @throws AuthenticationFailedException if the authentication fails
 	 */
 	public function authenticate(Request $request) {
-		return false;
+		$nick = $request->getParameters()->get('nick', '');
+		$password = $request->getParameters()->get('password', '');
+		$user = $this->users->get($nick, null);
+		
+		if($user != null) {
+			if($user->getPassword() == $password) { // TODO better password check (SHA1 based)
+				return $user;
+			}
+		}
+		
+		throw new AuthenticationFailedException('Could not authenticate with passed request against xml security implementation.');
 	}
 }
 
