@@ -13,8 +13,8 @@ class Vector extends ArrayObject implements Collection {
 		$this[$key] = $value;
 	}
 
-	public function get($key) {
-		return $this[$key];
+	public function get($key, $default = '') {
+		return Value :: get($this[$key], $default);
 	}
 
 	public function exists($key) {

@@ -41,6 +41,10 @@ interface Group {
 	public function getName();
 }
 
+class AuthenticationFailedException extends Exception {
+
+}
+
 /**
  * Interface for security providers.
  */
@@ -64,7 +68,8 @@ interface SecurityProvider {
 	 * Tries to authenticate the user with the passed request.
 	 *
 	 * @param Request $request the request to authenticate
-	 * @return mixed <code>false</code> on failure, otherwise the Role object
+	 * @return User the authenticated user object
+	 * @throws AuthenticationFailedException if the authentication fails
 	 */
 	public function authenticate(Request $request);
 }
