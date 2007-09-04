@@ -11,8 +11,8 @@ $tstart = $mtime;
 
 require_once 'bundles/ch.anomey.chameleon/chameleon.php';
 
-// initialize the chameleon and invoke "ch.anomey.processor"
-$chameleon = new Chameleon('bundles');
+// initialize the chameleon and invoke bundles
+$chameleon = new Chameleon('bundles', 'profiles');
 $chameleon->invoke();
 
 // Get current time (Like above) to get end time
