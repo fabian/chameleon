@@ -2,6 +2,7 @@
 
 require_once 'util.php';
 require_once 'log.php';
+require_once 'profiles.php';
 
 /**
  * Central registry of all extensions, extension points
@@ -73,7 +74,7 @@ class Bundle {
 	private $chameleon;
 
 	private $id;
-	
+
 	private $version;
 
 	public function __construct(Chameleon $chameleon, $id, $version) {
@@ -85,7 +86,7 @@ class Bundle {
 	public function getId() {
 		return $this->id;
 	}
-	
+
 	public function getVersion() {
 		return $this->version;
 	}
@@ -284,9 +285,14 @@ class BundleMissingException extends Exception {
 class Chameleon {
 
 	const BUNDLE_XML = 'bundle.xml';
+	
 	const BUNDLE_PHP = 'bundle.php';
 
+	const PROFILE_XML = 'profile.xml';
+
 	private $bundlesPath;
+
+	private $profilesPath;
 
 	/**
 	 * @var ExtensionRegistry
@@ -311,29 +317,45 @@ class Chameleon {
 	 * @var Vector
 	 */
 	private $bundles;
-	
+
 	/**
 	 * @var Vector
 	 */
-	private $folders; 
-	
-	public function __construct($bundlesPath = 'bundles') {
+	private $folders;
+
+	public function __construct($bundlesPath = 'bundles', $profilesPath = 'profiles') {
 		$this->bundlesPath = $bundlesPath;
+		$this->profilesPath = $profilesPath;
 		$this->extensionRegistry = new ExtensionRegistry();
 		$this->disabledBundles = new Vector();
 		$this->bundles = new Vector();
 		$this->folders = new Vector();
+		
+		// load profiles
+		foreach (scandir($this->profilesPath) as $profile) {
+			$path = $this->profilesPath . '/' . $profile;
+			if ($this->isProfile($path)) {
+				// parse profile xml file
+				$xml = simplexml_load_file($path . '/' . self::PROFILE_XML);
+				
+				$profile = new Profile($profile);
+				
+				foreach ($xml->host as $host) {
+					$profile->getHosts()->append((string) $host);
+				}
+			}
+		}
 
 		// parse disabled bundles
 		$xml = simplexml_load_file('data/ch.anomey.chameleon/configuration.xml');
 		foreach ($xml->disable->bundle as $bundle) {
 			$this->disabledBundles->append(trim($bundle));
 		}
-		
+
 		$this->logLevel = (int) $xml->log->level;
 		$this->log = new Log('ch.anomey.chameleon', $this->getLogLevel());
-		
-		// load bundle folder in path
+
+		// load bundles folder in path
 		foreach (scandir($this->bundlesPath) as $bundle) {
 			$path = $this->bundlesPath . '/' . $bundle;
 			if ($this->isBundle($path)) {
@@ -341,24 +363,24 @@ class Chameleon {
 
 				// parse bundle xml file
 				$xml = simplexml_load_file($path . '/' . self::BUNDLE_XML);
-				
+
 				$id = (string) $xml['id'];
 				$version = (string) $xml['version'];
-				
+
 				if($version !== '') {
 					if(!$this->folders->exists($id)) {
 						$this->folders[$id] = new Vector();
 					}
 					$this->folders[$id][$version] = $path;
-	
+
 					$this->log->trail(sprintf('Loaded bundle folder \'%s\'.', $bundle));
 				} else {
 					$this->log->warn(sprintf('Could no load bundle folder \'%s\' because bundle has no version.', $bundle));
 				}
 			}
 		}
-		
-		foreach($this->folders as $id => $versions) {			
+
+		foreach($this->folders as $id => $versions) {
 			$this->loadBundle($id);
 		}
 	}
@@ -427,24 +449,24 @@ class Chameleon {
 			if(!$this->disabledBundles->contains($id)) {
 				if($this->folders->exists($id)) {
 					$this->log->trail(sprintf('Loading bundle \'%s\'.', $id));
-					
+						
 					$previous = 0;
 					$latest = '';
-					
+						
 					foreach($this->folders[$id] as $version => $path) {
 						if(version_compare($previous, $version, '<') or $latest == '') {
 							$latest = $path;
 						}
 						$previous = $version;
 					}
-					
+						
 					$bundleFolder = $latest;
-					
+						
 					// parse bundle xml file
 					$xml = simplexml_load_file($bundleFolder . '/' . self::BUNDLE_XML);
 
 					$version = (string) $xml['version'];
-					
+						
 					if($xml->require->bundle != null) {
 						foreach ($xml->require->bundle as $requiredBundle) {
 							try {
@@ -454,43 +476,43 @@ class Chameleon {
 							}
 						}
 					}
-			
+						
 					// include bundle.php of bundle
 					if (file_exists($bundleFolder . '/' . self::BUNDLE_PHP)) {
 						include_once $bundleFolder . '/' . self::BUNDLE_PHP;
 					}
-					
+						
 					$bundleClass = trim($xml->class);
-					
+						
 					// if no bundle class is defined, use default class
 					if ($bundleClass == '') {
 						$bundleClass = 'Bundle';
 					}
-					
+						
 					// create bundle
 					$bundle = new $bundleClass($this, $id, $version);
 					$this->bundles[$id] = $bundle;
-			
+						
 					// read extension points
 					foreach ($xml->extensionPoint as $ep) {
 						$extensionClass = trim($ep->class);
 						$namespace = trim($ep->namespace);
-			
+							
 						// add extension point to registry
 						$this->extensionRegistry->addExtensionPoint(new ExtensionPoint($namespace, $extensionClass));
 					}
-			
+						
 					// loop all extension points
 					foreach ($this->extensionRegistry->getExtensionPoints() as $extensionPoint) {
 						$xml->registerXPathNamespace('t', $extensionPoint->getNamespace());
-			
+							
 						// parse extensions of current extension point
 						foreach ($xml->xpath('//t:extension') as $e) {
 							// add extension to extension point
 							$extensionPoint->createExtension(new XMLExtensionPointElement($e), $bundle);
 						}
 					}
-	
+
 					$this->log->trail(sprintf('Loaded bundle \'%s\' version \'%s\'.', $bundle->getId(), $bundle->getVersion()));
 				} else {
 					$this->log->error(sprintf('Could not load bundle \'%s\' because no folder contains the bundle.', $id));
@@ -499,6 +521,18 @@ class Chameleon {
 				$this->log->trail(sprintf('Bundle \'%s\' hasn\'t been loaded as it\'s disabled.', $id));
 			}
 		}
+	}
+
+	/**
+	 * Check if the passsed path is a profile folder. Returns
+	 * <code>true</code> if it is a profile folder or otherwise
+	 * <code>false</code>.
+	 *
+	 * @param string $path name of the folder
+	 * @return boolean
+	 */
+	private function isProfile($path) {
+		return file_exists($path . '/' . self::PROFILE_XML);
 	}
 }
 ?>

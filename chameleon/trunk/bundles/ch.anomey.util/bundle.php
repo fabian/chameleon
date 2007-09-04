@@ -22,7 +22,7 @@ abstract class Bean implements ArrayAccess {
 			return $this-> $method ($value);
 		}
 	}
-	
+
 	function offsetUnset($key) {
 	}
 }
@@ -85,7 +85,7 @@ class Session {
 	public function commit() {
 		session_commit();
 	}
-	
+
 	public function regenerate() {
 		session_regenerate_id();
 		$this->id = session_id();
@@ -121,7 +121,7 @@ class Cookie {
 }
 
 class URL extends Bean {
-	
+
 	const CHARS = '[-_\/a-zA-Z0-9]';
 
 	private $scheme;
@@ -129,7 +129,7 @@ class URL extends Bean {
 	private $host;
 
 	private $path;
-	
+
 	private $base = '';
 
 	function __construct($scheme, $host, $path) {
@@ -141,11 +141,11 @@ class URL extends Bean {
 	public function getPath() {
 		return $this->path;
 	}
-	
+
 	public function getBase() {
 		return $this->base;
 	}
-	
+
 	public function setBase($base) {
 		$this->base = $base;
 	}
@@ -157,7 +157,7 @@ class URL extends Bean {
 	public function toString() {
 		return $this->getServer() . $this->path;
 	}
-	
+
 	public function getRunpath() {
 		return substr($this->path . $this->getBase(), 0, -1);
 	}
@@ -165,15 +165,15 @@ class URL extends Bean {
 
 abstract class HTML {
 	/**
-	* This function adapts htmlentities()
-	* to the $variable. If the variable is an array,
-	* the function htmlentities will be adapt to the
-	* containing $variables recursively. 
-	*
-	* @author Fabian Vogler <fabian@ap04a.ch>
-	* @param mixed $variable
-	* @return mixed
-	*/
+	 * This function adapts htmlentities()
+	 * to the $variable. If the variable is an array,
+	 * the function htmlentities will be adapt to the
+	 * containing $variables recursively.
+	 *
+	 * @author Fabian Vogler <fabian@ap04a.ch>
+	 * @param mixed $variable
+	 * @return mixed
+	 */
 	public static function entities($variable) {
 		if (is_array($variable)) {
 			foreach ($variable as $key => $value) {
@@ -211,7 +211,7 @@ abstract class String {
 			$value = array_map(array (
 				'String',
 				'stripslashes'
-			), $value);
+				), $value);
 		}
 		elseif (!is_object($value)) {
 			$value = stripslashes($value);
@@ -346,6 +346,62 @@ class Request extends Bean {
 		$this->cookie = $cookie;
 		$this->parameters = new Vector();
 		$this->messages = new Vector();
+	}
+}
+
+class SaltedHash {
+
+	private $salt;
+
+	private $hash;
+
+	private $separator;
+
+	public function __construct($salt, $hash, $separator = ':') {
+		$this->salt = $salt;
+		$this->hash = $hash;
+		$this->separator = $separator;
+	}
+
+	/**
+	 * @return SaltedHash
+	 */
+	public static function generate($string) {
+		$salt = sha1(uniqid(rand(), true));
+		$hash = sha1($salt . $string);
+		return new self($salt, $hash);
+	}
+	
+	private static function hashing($salt, $string) {
+		return sha1($salt . $string);
+	}
+
+	/**
+	 * @return SaltedHash
+	 */
+	public static function parse($hash, $separator = ':') {
+		list($salt, $hash) = split($separator, $hash, 2);
+		return new self($salt, $hash, $separator);
+	}
+
+	public function getSalt() {
+		return $this->salt;
+	}
+
+	public function getHash() {
+		return $this->hash;
+	}
+
+	public function compare($string) {
+		return $this->getHash() == $this->hashing($this->getSalt(), $string);
+	}
+
+	public function equals(SaltedHash $hash) {
+		return $this->getHash() == $hash->getHash() && $this->getSalt() == $hash->getSalt();
+	}
+
+	public function __toString() {
+		return $salt . $this->separator . $this->separator . $hash;
 	}
 }
 
