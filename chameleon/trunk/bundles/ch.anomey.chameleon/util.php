@@ -34,7 +34,7 @@ class Vector extends ArrayObject implements Collection {
 	}
 
 	public function getKeys() {
-		return new Vector(array_keys($this));
+		return new Vector(array_keys((array) $this));
 	}
 
 	/**

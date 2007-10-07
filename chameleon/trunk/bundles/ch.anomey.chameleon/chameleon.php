@@ -285,14 +285,26 @@ class BundleMissingException extends Exception {
 class Chameleon {
 
 	const BUNDLE_XML = 'bundle.xml';
-	
+
 	const BUNDLE_PHP = 'bundle.php';
 
 	const PROFILE_XML = 'profile.xml';
 
+	const DEFAULT_PROFILE = 'default';
+
 	private $bundlesPath;
 
 	private $profilesPath;
+
+	/**
+	 * @var Vector
+	 */
+	private $profiles;
+
+	/**
+	 * @var Profile
+	 */
+	private $profile;
 
 	/**
 	 * @var ExtensionRegistry
@@ -323,25 +335,57 @@ class Chameleon {
 	 */
 	private $folders;
 
-	public function __construct($bundlesPath = 'bundles', $profilesPath = 'profiles') {
+	public function __construct($bundlesPath = 'bundles', $profilesPath = 'profiles', $profile = '') {
 		$this->bundlesPath = $bundlesPath;
 		$this->profilesPath = $profilesPath;
+		$this->profiles = new Vector();
+		$this->profile = null;
 		$this->extensionRegistry = new ExtensionRegistry();
 		$this->disabledBundles = new Vector();
 		$this->bundles = new Vector();
 		$this->folders = new Vector();
-		
+
 		// load profiles
-		foreach (scandir($this->profilesPath) as $profile) {
-			$path = $this->profilesPath . '/' . $profile;
+		foreach (scandir($this->profilesPath) as $profileName) {
+			$path = $this->profilesPath . '/' . $profileName;
 			if ($this->isProfile($path)) {
 				// parse profile xml file
 				$xml = simplexml_load_file($path . '/' . self::PROFILE_XML);
-				
-				$profile = new Profile($profile);
-				
+
+				$newProfile = new Profile($profileName);
+
 				foreach ($xml->host as $host) {
-					$profile->getHosts()->append((string) $host);
+					$newProfile->getHosts()->append((string) $host);
+				}
+
+				$this->profiles->set($profileName, $newProfile);
+			}
+		}
+
+		// choose profile
+		if($profile != '') {
+			$this->profile = $this->profiles->get($profile, null);
+		}
+
+		if($this->profile == null) {
+			$host = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : '';
+				
+			foreach($this->profiles as $profile) {
+				if($profile->getHosts()->contains($host)) {
+					$this->profile = $profile;
+				}
+			}
+
+			if($this->profile == null) {
+				$this->profile = $this->profiles->get(self :: DEFAULT_PROFILE, null);
+
+				if($this->profile == null) {
+					if(@mkdir($this->profilesPath . '/' . self :: DEFAULT_PROFILE, 0700, true)) {
+						// default profile folder created
+					} else {
+						// TODO better error handling required
+						exit('Could not create default profile folder ');
+					}
 				}
 			}
 		}
@@ -449,24 +493,24 @@ class Chameleon {
 			if(!$this->disabledBundles->contains($id)) {
 				if($this->folders->exists($id)) {
 					$this->log->trail(sprintf('Loading bundle \'%s\'.', $id));
-						
+
 					$previous = 0;
 					$latest = '';
-						
+
 					foreach($this->folders[$id] as $version => $path) {
 						if(version_compare($previous, $version, '<') or $latest == '') {
 							$latest = $path;
 						}
 						$previous = $version;
 					}
-						
+
 					$bundleFolder = $latest;
-						
+
 					// parse bundle xml file
 					$xml = simplexml_load_file($bundleFolder . '/' . self::BUNDLE_XML);
 
 					$version = (string) $xml['version'];
-						
+
 					if($xml->require->bundle != null) {
 						foreach ($xml->require->bundle as $requiredBundle) {
 							try {
@@ -476,23 +520,23 @@ class Chameleon {
 							}
 						}
 					}
-						
+
 					// include bundle.php of bundle
 					if (file_exists($bundleFolder . '/' . self::BUNDLE_PHP)) {
 						include_once $bundleFolder . '/' . self::BUNDLE_PHP;
 					}
-						
+
 					$bundleClass = trim($xml->class);
-						
+
 					// if no bundle class is defined, use default class
 					if ($bundleClass == '') {
 						$bundleClass = 'Bundle';
 					}
-						
+
 					// create bundle
 					$bundle = new $bundleClass($this, $id, $version);
 					$this->bundles[$id] = $bundle;
-						
+
 					// read extension points
 					foreach ($xml->extensionPoint as $ep) {
 						$extensionClass = trim($ep->class);
@@ -501,7 +545,7 @@ class Chameleon {
 						// add extension point to registry
 						$this->extensionRegistry->addExtensionPoint(new ExtensionPoint($namespace, $extensionClass));
 					}
-						
+
 					// loop all extension points
 					foreach ($this->extensionRegistry->getExtensionPoints() as $extensionPoint) {
 						$xml->registerXPathNamespace('t', $extensionPoint->getNamespace());

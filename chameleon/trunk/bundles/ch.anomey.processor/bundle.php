@@ -41,15 +41,8 @@ class AnomeyProcessorBundle extends Bundle {
 		// Read the request method.
 		$method = $_SERVER['REQUEST_METHOD'];
 
-		// Trick out a CGI bug
-		if (isset ($_SERVER['PATH_INFO'])) {
-			if ($_SERVER['PATH_INFO'] == "" AND isset ($_SERVER['ORIG_PATH_INFO'])) {
-				$_SERVER['PATH_INFO'] = $_SERVER['ORIG_PATH_INFO'];
-			}
-		}
-
 		// Find out the trail.
-		$trail = Value :: get($_SERVER['PATH_INFO'], '/');
+		$trail = Value :: get($_GET['trail'], '/');
 
 		// Merge the parameters passed over POST and GET.
 		$parameters = new Vector(array_merge($_POST, $_GET));

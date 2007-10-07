@@ -18,6 +18,9 @@ class Profile {
 		return $this->name;
 	}
 	
+	/**
+	 * @return Vector
+	 */
 	public function getHosts() {
 		return $this->hosts;
 	}
