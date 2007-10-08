@@ -579,4 +579,23 @@ class Chameleon {
 		return file_exists($path . '/' . self::PROFILE_XML);
 	}
 }
+
+class AnomeyPreInvokeExtension extends Extension {
+
+	private $class;
+
+	public function getClass() {
+		return $this->class;
+	}
+
+	public function load(ExtensionPointElement $element) {
+		$this->class = trim($element->getValue());
+	}
+}
+
+interface AnomeyPreInvoke {
+	public function __construct(Chameleon $chameleon);
+	public function invoke();
+}
+
 ?>
