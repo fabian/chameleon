@@ -144,6 +144,19 @@ abstract class Extension {
 	}
 }
 
+class StandardExtension extends Extension  {
+
+	private $class;
+
+	public function getClass() {
+		return $this->class;
+	}
+
+	public function load(ExtensionPointElement $element) {
+		$this->class = trim($element->getValue());
+	}
+}
+
 class ExtensionPoint {
 
 	private $namespace = '';
@@ -284,6 +297,8 @@ class BundleMissingException extends Exception {
 
 class Chameleon {
 
+	const BUNDLES = 'bundles';
+
 	const BUNDLE_XML = 'bundle.xml';
 
 	const BUNDLE_PHP = 'bundle.php';
@@ -291,8 +306,6 @@ class Chameleon {
 	const PROFILE_XML = 'profile.xml';
 
 	const DEFAULT_PROFILE = 'default';
-
-	private $bundlesPath;
 
 	private $profilesPath;
 
@@ -335,8 +348,7 @@ class Chameleon {
 	 */
 	private $folders;
 
-	public function __construct($bundlesPath = 'bundles', $profilesPath = 'profiles', $profile = '') {
-		$this->bundlesPath = $bundlesPath;
+	public function __construct($profilesPath = 'profiles', $profile = '') {
 		$this->profilesPath = $profilesPath;
 		$this->profiles = new Vector();
 		$this->profile = null;
@@ -400,8 +412,8 @@ class Chameleon {
 		$this->log = new Log('ch.anomey.chameleon', $this->getLogLevel());
 
 		// load bundles folder in path
-		foreach (scandir($this->bundlesPath) as $bundle) {
-			$path = $this->bundlesPath . '/' . $bundle;
+		foreach (scandir(self::BUNDLES) as $bundle) {
+			$path = self::BUNDLES . '/' . $bundle;
 			if ($this->isBundle($path)) {
 				$this->log->trail('Loading bundle folder \'' . $bundle . '\'.');
 
@@ -540,6 +552,10 @@ class Chameleon {
 					// read extension points
 					foreach ($xml->extensionPoint as $ep) {
 						$extensionClass = trim($ep->class);
+						if($extensionClass == '') {
+							$extensionClass = 'StandardExtension';
+						}
+						
 						$namespace = trim($ep->namespace);
 							
 						// add extension point to registry
@@ -596,6 +612,16 @@ class AnomeyPreInvokeExtension extends Extension {
 interface AnomeyPreInvoke {
 	public function __construct(Chameleon $chameleon);
 	public function invoke();
+}
+
+class AnomeyMediaExtension extends StandardExtension {
+	
+}
+
+interface AnomeyMedia {
+	public function __construct(Chameleon $chameleon);
+	public function isActive();
+	public function handle();
 }
 
 ?>
