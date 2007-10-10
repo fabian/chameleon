@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bundle xmlns="http://anomey.ch/core/bundle" id="ch.anomey.chameleon"
 	version="0.1">
-	<extensionPoint>
+	<!-- <extensionPoint>
 		<namespace>http://anomey.ch/core/preinvoke</namespace>
 		<description>things to get done before invoke</description>
 		<class>AnomeyPreInvokeExtension</class>
+		</extensionPoint> -->
+	<extensionPoint>
+		<namespace>http://anomey.ch/core/media</namespace>
+		<description>
+			ways how PHP can be called (http, cli) - defines current
+			profile
+		</description>
 	</extensionPoint>
 </bundle>

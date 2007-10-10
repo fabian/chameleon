@@ -9,10 +9,10 @@ $mtime = $mtime[1] + $mtime[0];
 // Write Start Time Into A Variable
 $tstart = $mtime;
 
-require_once 'bundles/ch.anomey.chameleon/chameleon.php';
+require_once 'loader.php';
 
 // initialize the chameleon and invoke bundles
-$chameleon = new Chameleon('bundles', 'profiles');
+$chameleon = new Chameleon('profiles');
 $chameleon->invoke();
 
 // Get current time (Like above) to get end time
