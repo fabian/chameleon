@@ -25,7 +25,7 @@ class Vector extends ArrayObject implements Collection {
 		return in_array($value, (array) $this);
 	}
 
-	public function merge(Vector $array) {
+	public function merge($array) {
 		$this->exchangeArray(array_merge((array) $this, (array) $array));
 	}
 

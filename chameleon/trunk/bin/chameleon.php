@@ -1,7 +1,7 @@
 #!/usr/bin/php
 <?php
 
-if (isset( $_SERVER ) && array_key_exists( 'REQUEST_METHOD', $_SERVER ) ) {
+if (isset($_SERVER) && array_key_exists('REQUEST_METHOD', $_SERVER) ) {
 	echo "This script must be run from the command line.\n";
 } else {
 	require_once 'loader.php';

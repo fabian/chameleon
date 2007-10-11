@@ -331,7 +331,7 @@ class Chameleon {
 	 */
 	private $folders;
 
-	public function __construct() {
+	public function __construct() {		
 		$this->extensionRegistry = new ExtensionRegistry();
 		$this->disabledBundles = new Vector();
 		$this->bundles = new Vector();
@@ -342,6 +342,13 @@ class Chameleon {
 		foreach ($xml->disable->bundle as $bundle) {
 			$this->disabledBundles->append(trim($bundle));
 		}
+		
+		// set timezone
+		$timezone = (string) $xml->timezone;
+		if($timezone == '') {
+			$timezone = @date_default_timezone_get();
+		}
+		date_default_timezone_set($timezone);
 
 		$this->logLevel = (int) $xml->log->level;
 		$this->log = new Log('ch.anomey.chameleon', $this->getLogLevel());
@@ -354,7 +361,7 @@ class Chameleon {
 
 				// parse bundle xml file
 				$xml = simplexml_load_file($path . '/' . self::BUNDLE_XML);
-
+				
 				$id = (string) $xml['id'];
 				$version = (string) $xml['version'];
 
