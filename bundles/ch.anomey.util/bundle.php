@@ -130,8 +130,6 @@ class URL extends Bean {
 
 	private $path;
 
-	private $base = '';
-
 	function __construct($scheme, $host, $path) {
 		$this->scheme = $scheme;
 		$this->host = $host;
@@ -142,24 +140,12 @@ class URL extends Bean {
 		return $this->path;
 	}
 
-	public function getBase() {
-		return $this->base;
-	}
-
-	public function setBase($base) {
-		$this->base = $base;
-	}
-
 	public function getServer() {
 		return $this->scheme . '://' . $this->host;
 	}
 
 	public function toString() {
 		return $this->getServer() . $this->path;
-	}
-
-	public function getRunpath() {
-		return substr($this->path . $this->getBase(), 0, -1);
 	}
 }
 
