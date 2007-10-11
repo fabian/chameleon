@@ -295,6 +295,8 @@ class BundleMissingException extends Exception {
 }
 
 class Chameleon {
+	
+	const ID = 'ch.anomey.chameleon';
 
 	const BUNDLES = 'bundles';
 
@@ -338,9 +340,9 @@ class Chameleon {
 		$this->folders = new Vector();
 
 		// parse disabled bundles
-		$xml = simplexml_load_file('data/ch.anomey.chameleon/configuration.xml');
+		$xml = simplexml_load_file('configuration/ch.anomey.chameleon/settings.xml');
 		foreach ($xml->disable->bundle as $bundle) {
-			$this->disabledBundles->append(trim($bundle));
+			$this->disabledBundles->append(trim((string) $bundle));
 		}
 		
 		// set timezone
@@ -351,7 +353,7 @@ class Chameleon {
 		date_default_timezone_set($timezone);
 
 		$this->logLevel = (int) $xml->log->level;
-		$this->log = new Log('ch.anomey.chameleon', $this->getLogLevel());
+		$this->log = new Log('chameleon.log', $this->getLogLevel());
 
 		// load bundles folder in path
 		foreach (scandir(self::BUNDLES) as $bundle) {
