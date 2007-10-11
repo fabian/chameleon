@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings>
+	<disable>
+		<bundle>net.tales.duckling.ugly</bundle>
+	</disable>
+	<log>
+		<level>1</level>
+	</log>
+	<!-- optional: <timezone>Europe/Zurich</timezone> -->
+</settings>
