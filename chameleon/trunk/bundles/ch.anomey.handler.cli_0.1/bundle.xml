@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bundle xmlns="http://anomey.ch/core/bundle" id="ch.anomey.handler.cli"
+	version="0.1">
+	<require>
+		<bundle version="0.1">ch.anomey.util</bundle>
+	</require>
+	<extension xmlns="http://anomey.ch/core/processor">
+		AnomeyBundleProcessor
+	</extension>
+</bundle>
