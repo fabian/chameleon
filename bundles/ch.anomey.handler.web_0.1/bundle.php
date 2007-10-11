@@ -1,6 +1,6 @@
 <?php
 
-class AnomeyProcessorBundle extends Bundle {
+class AnomeyHandlerWebBundle extends Bundle {
 
 	private $url;
 
@@ -91,12 +91,22 @@ class AnomeyProcessorExtension extends Extension {
 	}
 }
 
-interface AnomeyProcessor {
-	public function __construct(Request $request);
-	public function process();
+abstract class AnomeyProcessor {
+	
+	public function __construct(Request $request) {
+		
+	}
+	
+	public function process() {
+		
+	}
+	
+	public function end() {
+		
+	}
 }
 
-class AnomeyBundleProcessor implements AnomeyProcessor {
+class AnomeyBundleProcessor extends AnomeyProcessor {
 
 	private $trail;
 
