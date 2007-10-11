@@ -97,4 +97,19 @@ class AnomeyBundle extends Bundle {
 	}
 }
 
+class AnomeyWebProcessor {
+
+	public function __construct(Request $request) {
+		
+	}
+	
+	public function process() {
+		
+	}
+	
+	public function end() {
+		
+	}
+}
+
 ?>
