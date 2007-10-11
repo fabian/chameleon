@@ -2,13 +2,9 @@
 
 class Log {
 	
-	private $bundle = '';
+	private $file = '';
 	
-	private $level = self::TRAIL;
-
-	const TMP = 'tmp';
-
-	const FILE = 'tmp/chameleon.log';
+	private $level = self::TRACE;
 	
 	const ERROR = 1;
 	
@@ -16,10 +12,10 @@ class Log {
 	
 	const INFO = 7;
 	
-	const TRAIL = 15;
+	const TRACE = 15;
 
-	public function __construct($bundle, $level = self::TRAIL) {
-		$this->bundle = $bundle;
+	public function __construct($file, $level = self::TRACE) {
+		$this->file = $file;
 		$this->level = $level;
 	}
 	
@@ -51,16 +47,12 @@ class Log {
 		}
 	}
 	
-	private function write($type, $message) {
-		if(!file_exists(self::TMP)) {
-			mkdir(self::TMP);
+	private function write($type, $message) {		
+		if(!file_exists($this->file)) {
+			touch($this->file);
 		}
 		
-		if(!file_exists(self::FILE)) {
-			touch(self::FILE);
-		}
-		
-		file_put_contents(self::FILE, date('c') . ' '.$type.' [' . $this->bundle . '] ' . $message . "\n", FILE_APPEND);
+		file_put_contents($this->file, date('c') . ' '.$type.' ' . $message . "\n", FILE_APPEND);
 	}
 }
 

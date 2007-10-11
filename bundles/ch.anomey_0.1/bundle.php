@@ -1,6 +1,6 @@
 <?php
 
-require_once 'profiles.php';
+require_once 'profile.php';
 
 class AnomeyBundle extends Bundle {
 
@@ -46,7 +46,7 @@ class AnomeyBundle extends Bundle {
 
 		// web or cli?
 		if(isset($_SERVER) && array_key_exists('REQUEST_METHOD', $_SERVER)) {
-			
+
 			// choose profile
 			$host = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : '';
 
@@ -59,7 +59,7 @@ class AnomeyBundle extends Bundle {
 			if($this->profile == null) {
 				$this->profile = $this->getDefaultProfile();
 			}
-				
+
 			// -----------------------------
 			// Instantiate the base URL
 			// -----------------------------
@@ -104,7 +104,7 @@ class AnomeyBundle extends Bundle {
 
 			// Initialize session.
 			$session = new Session();
-	
+
 			// Load and clear messages.
 			$messages = $session->load('systemMessages', array ());
 			$session->clear('systemMessages');
@@ -123,7 +123,39 @@ class AnomeyBundle extends Bundle {
 			}
 		} else {
 			// cli
-			var_dump('cli');
+
+			// TODO: select profile from passed arguments
+				
+			if($this->profile == null) {
+				$this->profile = $this->getDefaultProfile();
+			}
+
+			$auto = false;
+
+			if(!$auto) {
+				echo "The following bundles will be upgraded:\n";
+				echo "  ch.anomey.framework ch.anomey.security\n";
+				echo "Do you want to continue [Y/n]? ";
+					
+				$answer = "";
+				fscanf(STDIN, "%c\n", $answer);
+				if(empty($answer)) {
+					$answer = "Y";
+				}
+			} else {
+				$answer = "Y";
+			}
+
+			if(strtoupper($answer) == "Y") {
+				echo "Updating.";
+				for($i = 0; $i < 10; $i++) {
+					usleep(250000);
+					echo ".";
+				}
+				echo " Finished!\n";
+			} else {
+				echo "Aborted!\n";
+			}
 		}
 	}
 
@@ -157,6 +189,9 @@ class AnomeyBundle extends Bundle {
 
 class AnomeyWebProcessor {
 
+	/**
+	 * @var Request
+	 */
 	private $request;
 
 	public function __construct(Request $request, AnomeyBundle $anomey) {

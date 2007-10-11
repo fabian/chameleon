@@ -335,6 +335,10 @@ class Request extends Bean {
 	}
 }
 
+class Response {
+	
+}
+
 class SaltedHash {
 
 	private $salt;
