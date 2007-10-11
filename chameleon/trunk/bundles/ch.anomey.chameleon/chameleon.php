@@ -2,7 +2,6 @@
 
 require_once 'util.php';
 require_once 'log.php';
-require_once 'profiles.php';
 
 /**
  * Central registry of all extensions, extension points
@@ -303,22 +302,6 @@ class Chameleon {
 
 	const BUNDLE_PHP = 'bundle.php';
 
-	const PROFILE_XML = 'profile.xml';
-
-	const DEFAULT_PROFILE = 'default';
-
-	private $profilesPath;
-
-	/**
-	 * @var Vector
-	 */
-	private $profiles;
-
-	/**
-	 * @var Profile
-	 */
-	private $profile;
-
 	/**
 	 * @var ExtensionRegistry
 	 */
@@ -348,59 +331,11 @@ class Chameleon {
 	 */
 	private $folders;
 
-	public function __construct($profilesPath = 'profiles', $profile = '') {
-		$this->profilesPath = $profilesPath;
-		$this->profiles = new Vector();
-		$this->profile = null;
+	public function __construct() {
 		$this->extensionRegistry = new ExtensionRegistry();
 		$this->disabledBundles = new Vector();
 		$this->bundles = new Vector();
 		$this->folders = new Vector();
-
-		// load profiles
-		foreach (scandir($this->profilesPath) as $profileName) {
-			$path = $this->profilesPath . '/' . $profileName;
-			if ($this->isProfile($path)) {
-				// parse profile xml file
-				$xml = simplexml_load_file($path . '/' . self::PROFILE_XML);
-
-				$newProfile = new Profile($profileName);
-
-				foreach ($xml->host as $host) {
-					$newProfile->getHosts()->append((string) $host);
-				}
-
-				$this->profiles->set($profileName, $newProfile);
-			}
-		}
-
-		// choose profile
-		if($profile != '') {
-			$this->profile = $this->profiles->get($profile, null);
-		}
-
-		if($this->profile == null) {
-			$host = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : '';
-				
-			foreach($this->profiles as $profile) {
-				if($profile->getHosts()->contains($host)) {
-					$this->profile = $profile;
-				}
-			}
-
-			if($this->profile == null) {
-				$this->profile = $this->profiles->get(self :: DEFAULT_PROFILE, null);
-
-				if($this->profile == null) {
-					if(@mkdir($this->profilesPath . '/' . self :: DEFAULT_PROFILE, 0700, true)) {
-						// default profile folder created
-					} else {
-						// TODO better error handling required
-						exit('Could not create default profile folder ');
-					}
-				}
-			}
-		}
 
 		// parse disabled bundles
 		$xml = simplexml_load_file('data/ch.anomey.chameleon/configuration.xml');
@@ -581,18 +516,6 @@ class Chameleon {
 				$this->log->trail(sprintf('Bundle \'%s\' hasn\'t been loaded as it\'s disabled.', $id));
 			}
 		}
-	}
-
-	/**
-	 * Check if the passsed path is a profile folder. Returns
-	 * <code>true</code> if it is a profile folder or otherwise
-	 * <code>false</code>.
-	 *
-	 * @param string $path name of the folder
-	 * @return boolean
-	 */
-	private function isProfile($path) {
-		return file_exists($path . '/' . self::PROFILE_XML);
 	}
 }
 

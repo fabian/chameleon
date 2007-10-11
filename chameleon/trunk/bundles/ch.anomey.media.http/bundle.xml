@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<bundle xmlns="http://anomey.ch/core/bundle" id="ch.anomey.media.http"
-	version="0.1">
-	<extension xmlns="http://anomey.ch/core/media">AnomeyHTTPMedia</extension>
-</bundle>

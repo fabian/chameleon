@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bundle xmlns="http://anomey.ch/core/bundle" id="ch.anomey.processor"
+<bundle xmlns="http://anomey.ch/core/bundle" id="ch.anomey.handler.web"
 	version="0.1">
 	<require>
 		<bundle version="0.1">ch.anomey.util</bundle>
 	</require>
-	<class>AnomeyProcessorBundle</class>
+	<class>AnomeyHandlerWebBundle</class>
 	<extensionPoint>
 		<namespace>http://anomey.ch/core/processor</namespace>
 		<description>request processors</description>
