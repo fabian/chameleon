@@ -5,4 +5,8 @@
 		<bundle version="0.1">ch.anomey.util</bundle>
 	</require>
 	<class>AnomeyBundle</class>
+	<extensionPoint>
+		<namespace>http://anomey.ch/core/processor/web</namespace>
+		<description>web request processor</description>
+	</extensionPoint>
 </bundle>
