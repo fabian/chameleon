@@ -2,27 +2,35 @@
 
 require_once 'profile.php';
 
-class AnomeyBundle extends Bundle {
+class Anomey {
 
 	const PROFILE_XML = 'profile.xml';
 
 	const DEFAULT_PROFILE = 'default';
+	
+	const MEDIA_WEB = 'web';
+	
+	const MEDIA_CLI = 'cli';
 
-	private $profilesPath;
+	public $profilesPath;
 
 	/**
 	 * @var Vector
 	 */
-	private $profiles;
+	public $profiles;
 
 	/**
 	 * @var Profile
 	 */
-	private $profile;
+	public $profile;
+	
+	/**
+	 * @var string web or cli
+	 */
+	public $media;
 
-	public function invoke() {
-		$xml = simplexml_load_file('configuration/ch.anomey/settings.xml');
-		$this->profilesPath = (string) $xml->profilesPath;
+	public function __construct($profilesPath) {
+		$this->profilesPath = $profilesPath;
 
 		$this->profiles = new Vector();
 		$this->profile = null;
@@ -43,21 +51,69 @@ class AnomeyBundle extends Bundle {
 				$this->profiles->set($profileName, $newProfile);
 			}
 		}
+	}
+	
+	public function isMediaWeb() {
+		return $this->media == self::MEDIA_WEB;
+	}
+
+	/**
+	 * Check if the passsed path is a profile folder. Returns
+	 * <code>true</code> if it is a profile folder or otherwise
+	 * <code>false</code>.
+	 *
+	 * @param string $path name of the folder
+	 * @return boolean
+	 */
+	private function isProfile($path) {
+		return file_exists($path . '/' . self::PROFILE_XML);
+	}
+
+	public function getDefaultProfile() {
+		$profile = $this->profiles->get(self :: DEFAULT_PROFILE, null);
+
+		if($profile == null) {
+			if(@mkdir($this->profilesPath . '/' . self :: DEFAULT_PROFILE, 0700, true)) {
+				// default profile folder created
+			} else {
+				// TODO better error handling required
+				exit('Could not create default profile folder ');
+			}
+		}
+
+		return $profile;
+	}
+}
+
+class AnomeyBundle extends Bundle {
+
+	/**
+	 * @var Anomey
+	 */
+	private $anomey;
+
+	public function invoke() {
+		$xml = simplexml_load_file('configuration/ch.anomey/settings.xml');
+		$profilesPath = (string) $xml->profilesPath;
+		
+		$this->anomey = new Anomey($profilesPath);
 
 		// web or cli?
 		if(isset($_SERVER) && array_key_exists('REQUEST_METHOD', $_SERVER)) {
+			$this->anomey->media = Anomey::MEDIA_WEB;
 
 			// choose profile
 			$host = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : '';
 
-			foreach($this->profiles as $profile) {
+			foreach($this->anomey->profiles as $profile) {
 				if($profile->getHosts()->contains($host)) {
-					$this->profile = $profile;
+					$this->anomey->profile = $profile;
+					break;
 				}
 			}
 
-			if($this->profile == null) {
-				$this->profile = $this->getDefaultProfile();
+			if($this->anomey->profile == null) {
+				$this->anomey->profile = $this->anomey->getDefaultProfile();
 			}
 
 			// -----------------------------
@@ -118,72 +174,56 @@ class AnomeyBundle extends Bundle {
 
 			foreach($this->getExtensions('http://anomey.ch/core/processor/web') as $extension) {
 				$class = $extension->getClass();
-				$processor = new $class($request, $this);
+				$processor = new $class($request, $this->anomey);
 				$processor->process();
 			}
 		} else {
 			// cli
+			$this->anomey->media = Anomey::MEDIA_CLI;
+			
+			$argv = isset($_SERVER['argv']) ? $_SERVER['argv'] : array();
+			$parameters = new Vector();
+			
+			
+			for($i = 0, $l = count($argv); $i < $l; $i++) {
+				if($argv[$i] == '-p' or $argv[$i] == '--profile') {
+					$parameters->set('profile', isset($argv[$i+1]) ? $argv[$i+1] : '');
+				}
+			}
+			
+			$this->anomey->profile = $this->anomey->profiles->get($parameters->get('profile'));
 
-			// TODO: select profile from passed arguments
-				
-			if($this->profile == null) {
-				$this->profile = $this->getDefaultProfile();
+			if($this->anomey->profile == null) {
+				$this->anomey->profile = $this->anomey->getDefaultProfile();
 			}
 
 			$auto = false;
+			$answer = '';
 
 			if(!$auto) {
-				echo "The following bundles will be upgraded:\n";
-				echo "  ch.anomey.framework ch.anomey.security\n";
-				echo "Do you want to continue [Y/n]? ";
-					
-				$answer = "";
+				echo 'The following bundles will be upgraded:' . "\n";
+				echo '  ch.anomey.framework ch.anomey.security' . "\n";
+				echo 'Do you want to continue [Y/n]? ';
+				
 				fscanf(STDIN, "%c\n", $answer);
-				if(empty($answer)) {
-					$answer = "Y";
-				}
-			} else {
-				$answer = "Y";
+			}
+			
+		
+			if(empty($answer) || $auto) {
+				$answer = 'Y';
 			}
 
-			if(strtoupper($answer) == "Y") {
-				echo "Updating.";
+			if(strtoupper($answer) == 'Y') {
+				echo 'Updating.';
 				for($i = 0; $i < 10; $i++) {
 					usleep(250000);
-					echo ".";
+					echo '.';
 				}
-				echo " Finished!\n";
+				echo ' Finished!' . "\n";
 			} else {
-				echo "Aborted!\n";
+				echo 'Aborted!' . "\n";
 			}
 		}
-	}
-
-	public function getDefaultProfile() {
-		$profile = $this->profiles->get(self :: DEFAULT_PROFILE, null);
-
-		if($profile == null) {
-			if(@mkdir($this->profilesPath . '/' . self :: DEFAULT_PROFILE, 0700, true)) {
-				// default profile folder created
-			} else {
-				// TODO better error handling required
-				exit('Could not create default profile folder ');
-			}
-		}
-
-		return $profile;
-	}
-
-	/**
-	 * Check if the passsed path is a profile folder. Returns
-	 * <code>true</code> if it is a profile folder or otherwise
-	 * <code>false</code>.
-	 *
-	 * @param string $path name of the folder
-	 * @return boolean
-	 */
-	private function isProfile($path) {
-		return file_exists($path . '/' . self::PROFILE_XML);
 	}
 }
 
@@ -194,7 +234,7 @@ class AnomeyWebProcessor {
 	 */
 	private $request;
 
-	public function __construct(Request $request, AnomeyBundle $anomey) {
+	public function __construct(Request $request, Anomey $anomey) {
 		$this->request = $request;
 	}
 
