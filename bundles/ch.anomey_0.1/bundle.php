@@ -7,27 +7,27 @@ class Anomey {
 	const PROFILE_XML = 'profile.xml';
 
 	const DEFAULT_PROFILE = 'default';
-	
+
 	const MEDIA_WEB = 'web';
-	
+
 	const MEDIA_CLI = 'cli';
 
-	public $profilesPath;
+	private $profilesPath;
 
 	/**
 	 * @var Vector
 	 */
-	public $profiles;
+	private $profiles;
 
 	/**
 	 * @var Profile
 	 */
-	public $profile;
-	
+	private $profile;
+
 	/**
 	 * @var string web or cli
 	 */
-	public $media;
+	private $media;
 
 	public function __construct($profilesPath) {
 		$this->profilesPath = $profilesPath;
@@ -52,7 +52,41 @@ class Anomey {
 			}
 		}
 	}
-	
+
+	public function getProfilesPath() {
+		return $this->profilesPath;
+	}
+
+	public function setProfilesPath($profilesPath) {
+		$this->profilesPath = $profilesPath;
+	}
+
+	/**
+	 * @return Profile
+	 */
+	public function getProfiles() {
+		return $this->profiles;
+	}
+
+	public function getProfile() {
+		return $this->profile;
+	}
+
+	/**
+	 * @param Profile $profile
+	 */
+	public function setProfile($profile) {
+		$this->profile = $profile;
+	}
+
+	public function getMedia() {
+		return $this->media;
+	}
+
+	public function setMedia($media) {
+		$this->media = $media;
+	}
+
 	public function isMediaWeb() {
 		return $this->media == self::MEDIA_WEB;
 	}
@@ -95,25 +129,25 @@ class AnomeyBundle extends Bundle {
 	public function invoke() {
 		$xml = simplexml_load_file('configuration/ch.anomey/settings.xml');
 		$profilesPath = (string) $xml->profilesPath;
-		
+
 		$this->anomey = new Anomey($profilesPath);
 
 		// web or cli?
 		if(isset($_SERVER) && array_key_exists('REQUEST_METHOD', $_SERVER)) {
-			$this->anomey->media = Anomey::MEDIA_WEB;
+			$this->anomey->setMedia(Anomey::MEDIA_WEB);
 
 			// choose profile
 			$host = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : '';
 
-			foreach($this->anomey->profiles as $profile) {
+			foreach($this->anomey->getProfiles() as $profile) {
 				if($profile->getHosts()->contains($host)) {
-					$this->anomey->profile = $profile;
+					$this->anomey->setProfile($profile);
 					break;
 				}
 			}
 
-			if($this->anomey->profile == null) {
-				$this->anomey->profile = $this->anomey->getDefaultProfile();
+			if($this->anomey->getProfile() == null) {
+				$this->anomey->setProfile($this->anomey->getDefaultProfile());
 			}
 
 			// -----------------------------
@@ -179,22 +213,22 @@ class AnomeyBundle extends Bundle {
 			}
 		} else {
 			// cli
-			$this->anomey->media = Anomey::MEDIA_CLI;
-			
+			$this->anomey->setMedia(Anomey::MEDIA_CLI);
+
 			$argv = isset($_SERVER['argv']) ? $_SERVER['argv'] : array();
 			$parameters = new Vector();
-			
-			
+
+
 			for($i = 0, $l = count($argv); $i < $l; $i++) {
 				if($argv[$i] == '-p' or $argv[$i] == '--profile') {
 					$parameters->set('profile', isset($argv[$i+1]) ? $argv[$i+1] : '');
 				}
 			}
-			
-			$this->anomey->profile = $this->anomey->profiles->get($parameters->get('profile'));
 
-			if($this->anomey->profile == null) {
-				$this->anomey->profile = $this->anomey->getDefaultProfile();
+			$this->anomey->setProfile($this->anomey->getProfiles()->get($parameters->get('profile')));
+
+			if($this->anomey->getProfile() == null) {
+				$this->anomey->setProfile($this->anomey->getDefaultProfile());
 			}
 
 			$auto = false;
@@ -204,11 +238,11 @@ class AnomeyBundle extends Bundle {
 				echo 'The following bundles will be upgraded:' . "\n";
 				echo '  ch.anomey.framework ch.anomey.security' . "\n";
 				echo 'Do you want to continue [Y/n]? ';
-				
+
 				fscanf(STDIN, "%c\n", $answer);
 			}
-			
-		
+
+
 			if(empty($answer) || $auto) {
 				$answer = 'Y';
 			}

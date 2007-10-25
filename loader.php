@@ -24,8 +24,9 @@ class Loader {
 		$previous = 0;
 		$latest = '';
 
-		foreach (scandir(self::BUNDLES) as $bundle) {
-			$path = self::BUNDLES . '/' . $bundle;
+		$bundlesPath = dirname(__FILE__) . '/' . self::BUNDLES;
+		foreach (scandir($bundlesPath) as $bundle) {
+			$path = $bundlesPath . '/' . $bundle;
 			$file = $path . '/bundle.xml';
 
 			if(file_exists($file)) {
