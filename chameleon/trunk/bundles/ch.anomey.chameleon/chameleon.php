@@ -15,6 +15,8 @@ class ExtensionRegistry {
 
 	/**
 	 * Vector with all extension points.
+	 * 
+	 * @var Vector
 	 */
 	private $extensionPoints;
 

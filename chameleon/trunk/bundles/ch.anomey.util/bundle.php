@@ -289,6 +289,9 @@ class Request extends Bean {
 
 	private $parameters;
 
+	/**
+	 * @return Vector
+	 */
 	public function getParameters() {
 		return $this->parameters;
 	}
