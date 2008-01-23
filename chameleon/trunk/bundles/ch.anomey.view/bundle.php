@@ -5,7 +5,7 @@ class View {
 	private $data = array ();
 
 	private $id;
-	
+
 	private $template;
 
 	/**
@@ -32,7 +32,7 @@ class View {
 	public function getBundle($id) {
 		return $this->bundle->getBundle($id);
 	}
-	
+
 	private function show($template) {
 		$this->data['id'] = $this->id;
 		$this->data['template'] = $template;
@@ -102,7 +102,7 @@ class AnomeyViewBundle extends Bundle {
 		}
 		return null;
 	}
-	
+
 	public function display($id) {
 		if($this->getView($id) != null) {
 			$this->getView($id)->display();
@@ -131,7 +131,7 @@ class AnomeyViewExtension extends Extension {
 	}
 
 	public function load(ExtensionPointElement $element) {
-		$this->id = trim($element->getChildrenByName('view')->getAttribute('id'));
+		$this->id = $element->getChildrenByName('view')->getAttribute('id');
 		$this->template = 'bundles/' . $this->getBundle()->getId() . '/' . trim($element->getChildrenByName('view')->getValue());
 	}
 }

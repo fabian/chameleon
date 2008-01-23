@@ -6,8 +6,14 @@ class Loader {
 
 	const BUNDLES = 'bundles';
 
+	/**
+	 * @var string
+	 */
 	private $bundle;
 
+	/**
+	 * @var string
+	 */
 	private $file;
 
 	private function __construct($ini) {

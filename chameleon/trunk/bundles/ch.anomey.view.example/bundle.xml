@@ -7,4 +7,7 @@
 	<extension xmlns="http://anomey.ch/view">
 		<view id="ch.anomey.view.example">views/example.view.php</view>
 	</extension>
+	<extension xmlns="http://anomey.ch/security">
+		<access view="ch.anomey.view.example" groups="foo, bar" />
+	</extension>
 </bundle>
