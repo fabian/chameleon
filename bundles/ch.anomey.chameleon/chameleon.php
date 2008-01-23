@@ -207,7 +207,12 @@ class ExtensionPoint {
 interface ExtensionPointElement {
 	public function getName();
 	public function getChildren();
+	
+	/**
+	 * @return ExtensionPointElement
+	 */
 	public function getChildrenByName($name);
+	
 	public function getValue();
 	public function getAttributes();
 	public function getAttribute($key);
@@ -249,7 +254,7 @@ class XMLExtensionPointElement implements ExtensionPointElement {
 		$this->value = trim((string) $xml);
 		$this->attributes = new Vector();
 		foreach ($xml->attributes() as $key => $value) {
-			$this->attributes[$key] = (string) $value;
+			$this->attributes[$key] = trim((string) $value);
 		}
 	}
 
